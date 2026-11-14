@@ -1,0 +1,944 @@
+/* AgriCart admin: Arial, compact dark sidebar, full-bleed sub-menu, TradingView layout */
+
+:root {
+    --agricart-sidebar: #0f172a;
+    --agricart-sidebar-border: rgba(148, 163, 184, 0.12);
+    --agricart-sidebar-text: #cbd5e1;
+    --agricart-sidebar-muted: #94a3b8;
+    --agricart-sidebar-hover: rgba(16, 185, 129, 0.12);
+    --agricart-sidebar-active: rgba(16, 185, 129, 0.18);
+    --agricart-content: #f8fafc;
+    --agricart-emerald: #10b981;
+    --agricart-font: Arial, sans-serif;
+    --agricart-main-px: 1rem;
+    --agricart-bar-height: 3.0625rem;
+    --agricart-subnav-height: var(--agricart-bar-height);
+}
+
+.fi-body {
+    --topbar-height: var(--agricart-bar-height);
+}
+
+@media (min-width: 768px) {
+    :root {
+        --agricart-main-px: 1.5rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    :root {
+        --agricart-main-px: 2rem;
+    }
+}
+
+/* 1) Global Arial — override Filament / Tailwind font stacks */
+html.fi,
+html.fi body,
+.fi-body,
+.fi-body *,
+.fi-simple-layout,
+.fi-simple-layout * {
+    font-family: var(--agricart-font) !important;
+}
+
+/* Compact sidebar shell */
+.fi-sidebar {
+    background-color: var(--agricart-sidebar) !important;
+    border-inline-end: 1px solid var(--agricart-sidebar-border);
+}
+
+.fi-body-has-topbar .fi-sidebar-header {
+    background-color: var(--agricart-sidebar) !important;
+    border-color: var(--agricart-sidebar-border) !important;
+    box-shadow: none !important;
+}
+
+.fi-sidebar-nav {
+    padding-inline: 0.75rem !important;
+    padding-block: 1rem !important;
+    gap: 1.25rem !important;
+}
+
+.fi-sidebar-nav-groups {
+    gap: 1.25rem !important;
+}
+
+.fi-sidebar-group-label,
+.fi-sidebar-item-label,
+.fi-sidebar-group-btn,
+.fi-sidebar-database-notifications-btn-label {
+    color: var(--agricart-sidebar-text) !important;
+}
+
+.fi-sidebar-group-label {
+    font-size: 0.6875rem !important;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--agricart-sidebar-muted) !important;
+}
+
+.fi-sidebar-item-btn,
+.fi-sidebar-group-btn,
+.fi-sidebar-database-notifications-btn {
+    border-radius: 0.625rem !important;
+    padding: 0.5rem 0.625rem !important;
+}
+
+.fi-sidebar-item-btn > .fi-icon,
+.fi-sidebar-group-btn > .fi-icon,
+.fi-sidebar-database-notifications-btn > .fi-icon {
+    color: var(--agricart-sidebar-muted) !important;
+}
+
+.fi-sidebar-item.fi-sidebar-item-has-url > .fi-sidebar-item-btn:hover,
+.fi-sidebar-item.fi-sidebar-item-has-url > .fi-sidebar-item-btn:focus-visible,
+.fi-sidebar-database-notifications-btn:hover,
+.fi-sidebar-database-notifications-btn:focus-visible {
+    background-color: var(--agricart-sidebar-hover) !important;
+}
+
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn,
+.fi-sidebar-item.fi-sidebar-item-has-active-child-items > .fi-sidebar-item-btn {
+    background-color: var(--agricart-sidebar-active) !important;
+}
+
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn > .fi-icon,
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn > .fi-sidebar-item-label {
+    color: #6ee7b7 !important;
+}
+
+.fi-sidebar-footer {
+    border-color: var(--agricart-sidebar-border) !important;
+}
+
+.fi-sidebar .fi-logo,
+.fi-sidebar .fi-logo span {
+    color: #f8fafc !important;
+}
+
+/* Light content workspace */
+.fi-main-ctn,
+.fi-main {
+    background-color: var(--agricart-content);
+}
+
+.fi-topbar {
+    height: var(--topbar-height);
+    min-height: var(--topbar-height);
+    background-color: #ffffff !important;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02);
+}
+
+/*
+ * 2) Full-bleed sticky module sub-menu
+ * Spans from the sidebar edge to the right viewport edge, and stays
+ * locked directly under the top header while scrolling.
+ */
+.fi-main:has(.fi-page-has-sub-navigation-top) {
+    max-width: none !important;
+    width: 100% !important;
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+}
+
+.fi-page-has-sub-navigation-top > .fi-page-header-main-ctn {
+    gap: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 1rem !important;
+}
+
+.fi-page-has-sub-navigation-top .fi-page-main {
+    gap: 0 !important;
+}
+
+.fi-page-has-sub-navigation-top:not([class*="fi-resource-"]) .fi-header {
+    display: none !important;
+}
+
+/* Mobile: dropdown only */
+.fi-page-has-sub-navigation-top .fi-page-sub-navigation-dropdown {
+    margin: 0;
+    padding: 0.75rem var(--agricart-main-px) 0;
+}
+
+.fi-page-sub-navigation-tabs-ctn {
+    position: relative;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.fi-page-sub-navigation-tabs-anchor {
+    display: none;
+    width: 100%;
+    height: var(--agricart-subnav-height, 2.75rem);
+}
+
+.fi-body:has(.page-info-launch) .fi-page-has-sub-navigation-top .fi-page-sub-navigation-tabs {
+    padding-right: 3.25rem;
+}
+
+html[dir="rtl"] .fi-body:has(.page-info-launch) .fi-page-has-sub-navigation-top .fi-page-sub-navigation-tabs {
+    padding-right: 0.35rem;
+    padding-left: 3.25rem;
+}
+
+.fi-page-has-sub-navigation-top .fi-page-sub-navigation-tabs {
+    display: none;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: none;
+    height: var(--agricart-subnav-height, 2.15rem);
+    margin: 0;
+    padding: 0 0.35rem;
+    background: var(--agricart-sidebar);
+    border: 0;
+    border-bottom: 1px solid var(--agricart-sidebar-border);
+    border-radius: 0;
+    box-shadow: none;
+}
+
+@media (min-width: 768px) {
+    .fi-page-has-sub-navigation-top .fi-page-sub-navigation-dropdown {
+        display: none !important;
+    }
+
+    .fi-page-sub-navigation-tabs-anchor {
+        display: block;
+    }
+
+    .fi-page-has-sub-navigation-top .fi-page-sub-navigation-tabs {
+        display: flex !important;
+        position: fixed;
+        top: var(--topbar-height, 4rem);
+        right: 0;
+        left: 0;
+        z-index: 40;
+        width: auto;
+    }
+}
+
+/* lg+: sync left edge with live sidebar width (expanded / collapsed) */
+@media (min-width: 1024px) {
+    .fi-body-has-sidebar-collapsible-on-desktop .fi-page-has-sub-navigation-top .fi-page-sub-navigation-tabs {
+        left: var(--sidebar-collapsed-width, 4.25rem);
+        transition: left 200ms ease;
+    }
+
+    .fi-body-has-sidebar-collapsible-on-desktop .fi-main-ctn-sidebar-open .fi-page-has-sub-navigation-top .fi-page-sub-navigation-tabs {
+        left: var(--sidebar-width, 14.5rem);
+    }
+
+    .fi-body-has-navigation:not(.fi-body-has-sidebar-collapsible-on-desktop):not(.fi-body-has-sidebar-fully-collapsible-on-desktop):not(.fi-body-has-top-navigation) .fi-page-has-sub-navigation-top .fi-page-sub-navigation-tabs {
+        left: var(--sidebar-width, 14.5rem);
+    }
+
+    html[dir="rtl"] .fi-body-has-sidebar-collapsible-on-desktop .fi-page-has-sub-navigation-top .fi-page-sub-navigation-tabs {
+        right: var(--sidebar-collapsed-width, 4.25rem);
+        left: 0;
+        transition: right 200ms ease;
+    }
+
+    html[dir="rtl"] .fi-body-has-sidebar-collapsible-on-desktop .fi-main-ctn-sidebar-open .fi-page-has-sub-navigation-top .fi-page-sub-navigation-tabs {
+        right: var(--sidebar-width, 14.5rem);
+        left: 0;
+    }
+
+    html[dir="rtl"] .fi-body-has-navigation:not(.fi-body-has-sidebar-collapsible-on-desktop):not(.fi-body-has-sidebar-fully-collapsible-on-desktop):not(.fi-body-has-top-navigation) .fi-page-has-sub-navigation-top .fi-page-sub-navigation-tabs {
+        right: var(--sidebar-width, 14.5rem);
+        left: 0;
+    }
+}
+
+.fi-page-has-sub-navigation-top .fi-page-sub-navigation-tabs .fi-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    width: 100%;
+    height: var(--agricart-subnav-height, 2.15rem);
+    max-width: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    scrollbar-width: thin;
+}
+
+.fi-page-has-sub-navigation-top .fi-page-sub-navigation-tabs .fi-tabs-item {
+    position: relative;
+    flex: 0 0 auto;
+    min-height: 2.05rem;
+    padding: 0.4rem 0.95rem;
+    border-radius: 0.625rem;
+    border-bottom: 0;
+    color: var(--agricart-sidebar-text);
+    font-size: 0.875rem;
+    font-weight: 700;
+    white-space: nowrap;
+    background: transparent !important;
+    box-shadow: none !important;
+    transition: background-color 150ms ease, color 150ms ease;
+}
+
+.fi-page-has-sub-navigation-top .fi-page-sub-navigation-tabs .fi-tabs-item .fi-icon {
+    color: inherit !important;
+}
+
+.fi-page-has-sub-navigation-top .fi-page-sub-navigation-tabs .fi-tabs-item:hover,
+.fi-page-has-sub-navigation-top .fi-page-sub-navigation-tabs .fi-tabs-item:focus-visible {
+    color: #6ee7b7;
+    background: var(--agricart-sidebar-hover) !important;
+}
+
+.fi-page-has-sub-navigation-top .fi-page-sub-navigation-tabs .fi-tabs-item[aria-selected='true'],
+.fi-page-has-sub-navigation-top .fi-page-sub-navigation-tabs .fi-tabs-item.fi-active {
+    color: #6ee7b7 !important;
+    background: var(--agricart-sidebar-active) !important;
+}
+
+/* Content keeps readable padding; the bar itself does not */
+.fi-page-has-sub-navigation-top .fi-page-content {
+    padding-inline: var(--agricart-main-px);
+}
+
+/* Header quick actions */
+.fi-quick-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-inline-start: 0.5rem;
+}
+
+.fi-quick-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    height: 2.25rem;
+    padding: 0 0.85rem;
+    border-radius: 0.625rem;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: #ffffff;
+    color: #0f172a;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+    white-space: nowrap;
+}
+
+.fi-quick-action:hover {
+    border-color: rgba(16, 185, 129, 0.35);
+    background: rgba(16, 185, 129, 0.08);
+    color: #047857;
+}
+
+.fi-quick-action--primary {
+    border-color: transparent;
+    background: var(--agricart-emerald);
+    color: #ffffff;
+    box-shadow: 0 1px 2px rgba(16, 185, 129, 0.35);
+}
+
+.fi-quick-action--primary:hover {
+    background: #059669;
+    color: #ffffff;
+    border-color: transparent;
+}
+
+.fi-quick-action svg {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+}
+
+.fi-locale-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    height: 2.25rem;
+    margin-inline-start: 0.35rem;
+    padding: 0.15rem;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 999px;
+    background: #ffffff;
+}
+
+.fi-locale-switch form {
+    display: flex;
+    margin: 0;
+}
+
+.fi-locale-switch button {
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: #334155;
+    cursor: pointer;
+    font-family: Arial, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 0.4rem 0.55rem;
+}
+
+.fi-locale-switch button.is-active {
+    background: #10b981;
+    color: #ffffff;
+}
+
+.fi-locale-switch span {
+    color: #94a3b8;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+@media (max-width: 768px) {
+    .fi-quick-actions {
+        display: none;
+    }
+}
+
+/*
+ * 3) TradingView workspace — sector bar, summary gauges, no chart
+ */
+.fi-body:has(.fi-page-trading-view) .fi-main {
+    overflow: auto;
+}
+
+.fi-page-trading-view.fi-page-has-sub-navigation-top {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: calc(100dvh - var(--topbar-height, 4rem));
+    max-height: none;
+    overflow: visible;
+}
+
+.fi-page-trading-view.fi-page-has-sub-navigation-top > .fi-page-header-main-ctn {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    padding-bottom: 0.5rem !important;
+}
+
+.fi-page-trading-view .fi-page-main,
+.fi-page-trading-view .fi-page-content {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 0 !important;
+    min-height: 0;
+    overflow: visible;
+}
+
+.tv-workspace {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
+    padding-bottom: 1.5rem;
+}
+
+.tv-sectors {
+    display: grid;
+    flex: none;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.65rem;
+    width: auto;
+    min-width: 0;
+    margin-inline: calc(var(--agricart-main-px) * -1);
+    padding: 0.7rem var(--agricart-main-px);
+    background: #ffffff;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.12);
+}
+
+.tv-sector {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+    padding: 0.15rem 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
+.tv-sector__header {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 0.25rem;
+    color: #475569;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.tv-sector__icon {
+    width: 0.9rem;
+    height: 0.9rem;
+    color: #10b981;
+}
+
+.tv-sector__symbols {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.tv-symbol-pill {
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    background: #f8fafc;
+    color: #334155;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    padding: 0.38rem 0.55rem;
+    white-space: nowrap;
+}
+
+.tv-symbol-pill:hover {
+    border-color: #6ee7b7;
+    background: rgba(16, 185, 129, 0.08);
+    color: #047857;
+}
+
+.tv-symbol-pill.is-active {
+    border-color: #10b981;
+    background: #10b981;
+    color: #ffffff;
+}
+
+.tv-symbol-notice {
+    flex: none;
+    margin: 0;
+    padding: 0.35rem 0.65rem;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: 0.5rem;
+    background: rgba(245, 158, 11, 0.1);
+    color: #92400e;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+@media (max-width: 1400px) {
+    .tv-sectors {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .tv-sectors {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.tv-workspace__gauges {
+    display: grid;
+    flex: none;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.4rem;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.tv-panel {
+    position: relative;
+    z-index: 0;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 0.75rem;
+    background: #ffffff;
+}
+
+.tv-indicators {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 0;
+    margin-top: 1rem;
+}
+
+.tv-indicators__title {
+    margin: 0;
+    color: #0f172a;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+}
+
+.tv-panel--indicator .tv-panel__label {
+    padding: 0.16rem 0.4rem 0;
+    font-size: 0.625rem;
+}
+
+.tv-panel__host--indicator {
+    height: auto;
+}
+
+.tv-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.28rem;
+    padding: 0.22rem 0.5rem 0.38rem;
+    text-align: center;
+}
+
+.tv-indicator__value {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.tv-indicator__histogram {
+    margin: 0;
+    color: #475569;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.tv-indicator__empty {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.tv-indicator__track,
+.tv-macd-track {
+    position: relative;
+    width: 100%;
+    height: 0.28rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #e2e8f0;
+}
+
+.tv-indicator__fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+}
+
+.tv-macd-track::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    background: #94a3b8;
+}
+
+.tv-macd-fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-radius: inherit;
+}
+
+.tv-macd-fill.is-buy {
+    left: 50%;
+}
+
+.tv-macd-fill.is-sell {
+    right: 50%;
+}
+
+.tv-indicator__fill.is-buy,
+.tv-macd-fill.is-buy {
+    background: #10b981;
+}
+
+.tv-indicator__fill.is-sell,
+.tv-macd-fill.is-sell {
+    background: #ef4444;
+}
+
+.tv-indicator__fill.is-neutral {
+    background: #f59e0b;
+}
+
+.tv-indicator__badge {
+    margin: 0;
+    border-radius: 999px;
+    padding: 0.1rem 0.4rem;
+    font-size: 0.625rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.tv-indicator__badge.is-buy {
+    background: rgba(16, 185, 129, 0.14);
+    color: #047857;
+}
+
+.tv-indicator__badge.is-sell {
+    background: rgba(239, 68, 68, 0.12);
+    color: #b91c1c;
+}
+
+.tv-indicator__badge.is-neutral {
+    background: rgba(245, 158, 11, 0.16);
+    color: #92400e;
+}
+
+.tv-investing {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    min-width: 0;
+    margin-top: -0.35rem;
+}
+
+.tv-panel__host--investing {
+    height: 9.5rem;
+}
+
+.tv-investing__clip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 320px;
+    height: 430px;
+    transform-origin: top left;
+}
+
+.tv-panel__host--investing iframe.tv-investing__frame {
+    position: relative !important;
+    display: block !important;
+    inset: auto !important;
+    width: 320px !important;
+    height: 430px !important;
+    max-width: none !important;
+    max-height: none !important;
+    margin: -104px 0 0 -10px !important;
+    border: 0 !important;
+    background: #ffffff;
+    pointer-events: none;
+}
+
+.tv-investing__empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0.4rem;
+    text-align: center;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: #64748b;
+}
+
+.tv-panel__label {
+    flex: none;
+    padding: 0.3rem 0.4rem 0;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.tv-panel__host {
+    position: relative;
+    z-index: 0;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.tv-panel__host--gauge {
+    height: 210px;
+}
+
+.tv-panel__host .tradingview-widget-container,
+.tv-panel__host .tradingview-widget-container__widget {
+    position: relative !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+}
+
+.tv-panel__host--gauge .tv-gauge-frame {
+    position: absolute !important;
+    width: 425px !important;
+    height: 450px !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: hidden !important;
+}
+
+.tv-panel__host iframe {
+    position: absolute !important;
+    inset: 0 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    border: 0 !important;
+}
+
+.tv-panel__host.tv-panel__host--gauge iframe {
+    overflow: hidden !important;
+    pointer-events: none;
+}
+
+/* Dark mode */
+.dark {
+    --agricart-content: #111827;
+}
+
+.dark .fi-main-ctn,
+.dark .fi-main {
+    background-color: var(--agricart-content);
+}
+
+.dark .fi-topbar {
+    background-color: #0b1220 !important;
+    border-bottom-color: rgba(148, 163, 184, 0.12);
+}
+
+.dark .fi-page-trading-view .tv-sectors {
+    background: #0b1220;
+    border-bottom-color: rgba(148, 163, 184, 0.16);
+}
+
+.dark .fi-locale-switch {
+    background: #0b1220;
+    border-color: rgba(148, 163, 184, 0.16);
+}
+
+.dark .fi-locale-switch button {
+    color: #e2e8f0;
+}
+
+.dark .fi-locale-switch button.is-active {
+    background: #10b981;
+    color: #ffffff;
+}
+
+.dark .fi-quick-action {
+    background: #0b1220;
+    border-color: rgba(148, 163, 184, 0.16);
+    color: #e2e8f0;
+}
+
+.dark .fi-quick-action:hover {
+    background: rgba(16, 185, 129, 0.14);
+    color: #6ee7b7;
+}
+
+.dark .tv-panel {
+    background: #0b1220;
+    border-color: rgba(148, 163, 184, 0.12);
+}
+
+.dark .tv-panel__label,
+.dark .tv-sector__header {
+    color: #94a3b8;
+}
+
+.dark .tv-sector {
+    background: #0b1220;
+    border-color: rgba(148, 163, 184, 0.12);
+}
+
+.dark .tv-symbol-pill {
+    border-color: rgba(148, 163, 184, 0.2);
+    background: rgba(15, 23, 42, 0.65);
+    color: #e2e8f0;
+}
+
+.dark .tv-symbol-pill:hover {
+    border-color: #34d399;
+    background: rgba(16, 185, 129, 0.14);
+    color: #6ee7b7;
+}
+
+.dark .tv-symbol-pill.is-active {
+    border-color: #10b981;
+    background: #10b981;
+    color: #ffffff;
+}
+
+.dark .tv-symbol-notice {
+    border-color: rgba(251, 191, 36, 0.35);
+    background: rgba(245, 158, 11, 0.12);
+    color: #fcd34d;
+}
+
+.dark .tv-investing__frame {
+    background: #ffffff;
+}
+
+.dark .tv-investing__empty {
+    color: #94a3b8;
+}
+
+.dark .tv-indicators__title,
+.dark .tv-indicator__value {
+    color: #e2e8f0;
+}
+
+.dark .tv-indicator__histogram,
+.dark .tv-indicator__empty {
+    color: #94a3b8;
+}
+
+.dark .tv-indicator__track,
+.dark .tv-macd-track {
+    background: rgba(148, 163, 184, 0.2);
+}
+
+.dark .tv-indicator__badge.is-buy {
+    color: #6ee7b7;
+}
+
+.dark .tv-indicator__badge.is-sell {
+    color: #fca5a5;
+}
+
+.dark .tv-indicator__badge.is-neutral {
+    color: #fcd34d;
+}
