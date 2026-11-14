@@ -25,7 +25,7 @@ class PythonBridgeLogs extends Page
 
     protected static ?string $title = 'Python Bridge Logs';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 6;
 
     protected string $view = 'trading::filament.pages.python-bridge-logs';
 

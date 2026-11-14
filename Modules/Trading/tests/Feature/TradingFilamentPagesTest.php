@@ -25,12 +25,12 @@ class TradingFilamentPagesTest extends TestCase
                 'data' => [[
                     's' => 'OANDA:XAUUSD',
                     'd' => [
-                        22.4, 1.2, 0.4,
-                        55.0, 0.2, 0.8,
-                        74.2, 0.1, 0.9,
-                        48.0, 2.0, 2.0,
-                        31.0, -1.0, -0.2,
-                        66.0, 0.5, 0.1,
+                        22.4, 1.2, 0.4, 1920, 1910, 1890, 1920, 1880, 1900, 1900, 1910, 1920, 1890, 1880,
+                        55.0, 0.2, 0.8, 1900, 1895, 1905, 1910, 1890, 1900, 1900, 1910, 1920, 1890, 1880,
+                        74.2, 0.1, 0.9, 1900, 1915, 1885, 1930, 1870, 1900, 1900, 1910, 1920, 1890, 1880,
+                        48.0, 2.0, 2.0, 1900, 1900, 1900, 1902, 1898, 1900, 1900, 1910, 1920, 1890, 1880,
+                        31.0, -1.0, -0.2, 1900, 1880, 1920, 1940, 1860, 1900, 1900, 1910, 1920, 1890, 1880,
+                        66.0, 0.5, 0.1, 1900, 1920, 1880, 1950, 1850, 1900, 1900, 1910, 1920, 1890, 1880,
                     ],
                 ]],
             ]),
@@ -39,7 +39,7 @@ class TradingFilamentPagesTest extends TestCase
 
     public function test_guests_are_redirected_from_trading_pages(): void
     {
-        $this->get('/admin/trading/trading-view')->assertRedirect();
+        $this->get('/admin/trading/signals')->assertRedirect();
     }
 
     public function test_authenticated_users_can_open_trading_submenu_pages(): void
@@ -47,9 +47,9 @@ class TradingFilamentPagesTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->get('/admin/trading/trading-view')
+            ->get('/admin/trading/signals')
             ->assertOk()
-            ->assertSee('TradingView', false)
+            ->assertSee('Signals', false)
             ->assertSee('Currencies', false)
             ->assertSee('Indices', false)
             ->assertSee('Commodities', false)
@@ -76,10 +76,19 @@ class TradingFilamentPagesTest extends TestCase
             ->assertSee('1M', false)
             ->assertSee('RSI Technical Indicators', false)
             ->assertSee('MACD Momentum Signals', false)
+            ->assertSee('Moving Averages', false)
+            ->assertSee('Bollinger Bands', false)
+            ->assertSee('Pivot Points', false)
             ->assertSee('Buying Area / Oversold', false)
             ->assertSee('Selling Area / Overbought', false)
             ->assertSee('Bullish', false)
             ->assertSee('Bearish', false)
+            ->assertSee('Strong Bullish', false)
+            ->assertSee('EMA 50', false)
+            ->assertSee('Squeeze / Low Volatility', false)
+            ->assertSee('>PP<', false)
+            ->assertSee('>R1<', false)
+            ->assertSee('>S2<', false)
             ->assertDontSee('>1m<', false)
             ->assertDontSee('1Y', false)
             ->assertDontSee('Investing.com Market Summary & Signals', false)
@@ -97,6 +106,14 @@ class TradingFilamentPagesTest extends TestCase
 
         $this->actingAs($user)->get('/admin/trading/open-trades')->assertOk();
         $this->actingAs($user)->get('/admin/trading/mt5-terminal')->assertOk();
+        $this->actingAs($user)
+            ->get('/admin/trading/calendar')
+            ->assertOk()
+            ->assertSee('Economic Calendar / News', false);
+        $this->actingAs($user)
+            ->get('/admin/trading/alerts')
+            ->assertOk()
+            ->assertSee('Smart Alerts', false);
         $this->actingAs($user)->get('/admin/trading/python-bridge-logs')->assertOk();
     }
 

@@ -7,6 +7,9 @@ return [
     'nav' => [
         'trading' => 'Trading',
         'trading_view' => 'TradingView',
+        'signals' => 'Signals',
+        'economic_calendar' => 'Economic Calendar / News',
+        'smart_alerts' => 'Smart Alerts',
         'open_trades' => 'Open Trades',
         'mt5_terminal' => 'MT5 Terminal',
         'python_bridge_logs' => 'Python Bridge Logs',
@@ -35,6 +38,17 @@ return [
         'investing' => 'Investing.com summaries',
         'rsi' => 'RSI Technical Indicators',
         'macd' => 'MACD Momentum Signals',
+        'ma' => 'Moving Averages',
+        'bollinger' => 'Bollinger Bands',
+        'pivot' => 'Pivot Points',
+    ],
+
+    'notes' => [
+        'rsi' => 'RSI below 30 signals an oversold buying zone, while above 70 signals an overbought selling zone.',
+        'macd' => 'A positive MACD histogram indicates bullish momentum, while a negative histogram shows bearish pressure.',
+        'ma' => 'EMA 50 above EMA 200 shows bullish alignment; below it shows a bearish trend.',
+        'bollinger' => 'A narrow band width marks a squeeze, while a wide band marks expanded volatility.',
+        'pivot' => 'Pivot Point, resistance, and support mark the key reversal levels for each timeframe.',
     ],
 
     'rsi' => [
@@ -47,6 +61,33 @@ return [
         'buy' => 'Bullish',
         'sell' => 'Bearish',
         'neutral' => 'Neutral',
+    ],
+
+    'ma' => [
+        'strong_buy' => 'Strong Bullish',
+        'buy' => 'Bullish Trend',
+        'sell' => 'Bearish Trend',
+        'neutral' => 'Neutral',
+        'ema50' => 'EMA 50',
+        'ema200' => 'EMA 200',
+    ],
+
+    'bollinger' => [
+        'squeeze' => 'Squeeze / Low Volatility',
+        'expand' => 'Expanded / High Volatility',
+        'normal' => 'Normal Volatility',
+        'lower' => 'Lower',
+        'basis' => 'Mid',
+        'upper' => 'Upper',
+        'width' => 'Width :value',
+    ],
+
+    'pivot' => [
+        'pp' => 'PP',
+        'r1' => 'R1',
+        'r2' => 'R2',
+        's1' => 'S1',
+        's2' => 'S2',
     ],
 
     'histogram' => 'Histogram :value',
@@ -98,8 +139,13 @@ return [
         'empty' => 'No data',
     ],
 
+    'placeholders' => [
+        'economic_calendar' => 'Economic releases and market headlines will appear in this space.',
+        'smart_alerts' => 'Price and signal alerts will appear in this space.',
+    ],
+
     'guides' => [
-        'trading-view' => [
+        'signals' => [
             'user' => <<<'TEXT'
 The top row is the TradingView summary for 30M, 1H, 4H, 1D, 1W, and 1M.
 

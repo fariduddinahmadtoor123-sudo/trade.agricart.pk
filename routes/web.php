@@ -8,6 +8,9 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::redirect('/admin/trading/trading-view', '/admin/trading/signals', 301);
+Route::redirect('/page-info/trading-view', '/page-info/signals', 301);
+
 Route::post('/locale/{locale}', [LocaleController::class, 'update'])
     ->whereIn('locale', ['en', 'ur'])
     ->name('locale.update');

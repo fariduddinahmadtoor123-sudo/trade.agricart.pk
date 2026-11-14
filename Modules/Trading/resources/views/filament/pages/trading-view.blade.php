@@ -77,11 +77,14 @@
         </section>
 
         <section class="tv-indicators" aria-label="{{ __('trading.sections.rsi') }}">
-            <h2 class="tv-indicators__title">{{ __('trading.sections.rsi') }}</h2>
+            <p class="tv-indicators__note">{{ __('trading.notes.rsi') }}</p>
             <div class="tv-workspace__gauges">
                 @foreach ($indicatorFrames as $frame)
                     <section class="tv-panel tv-panel--indicator" wire:key="rsi-{{ $symbol }}-{{ $frame['label'] }}">
-                        <div class="tv-panel__label">{{ $frame['label'] }}</div>
+                        <div class="tv-panel__label">
+                            <span class="tv-panel__frame">{{ $frame['label'] }}</span>
+                            <span class="tv-panel__name">{{ __('trading.sections.rsi') }}</span>
+                        </div>
                         <div class="tv-panel__host tv-panel__host--indicator tv-indicator">
                             @if ($frame['rsi'] === null)
                                 <p class="tv-indicator__empty">{{ __('trading.notices.unsupported') }}</p>
@@ -99,11 +102,14 @@
         </section>
 
         <section class="tv-indicators" aria-label="{{ __('trading.sections.macd') }}">
-            <h2 class="tv-indicators__title">{{ __('trading.sections.macd') }}</h2>
+            <p class="tv-indicators__note">{{ __('trading.notes.macd') }}</p>
             <div class="tv-workspace__gauges">
                 @foreach ($indicatorFrames as $frame)
                     <section class="tv-panel tv-panel--indicator" wire:key="macd-{{ $symbol }}-{{ $frame['label'] }}">
-                        <div class="tv-panel__label">{{ $frame['label'] }}</div>
+                        <div class="tv-panel__label">
+                            <span class="tv-panel__frame">{{ $frame['label'] }}</span>
+                            <span class="tv-panel__name">{{ __('trading.sections.macd') }}</span>
+                        </div>
                         <div class="tv-panel__host tv-panel__host--indicator tv-indicator">
                             @if ($frame['macd'] === null)
                                 <p class="tv-indicator__empty">{{ __('trading.notices.unsupported') }}</p>
@@ -116,6 +122,116 @@
                                         style="width: {{ $frame['macd']['strength'] / 2 }}%"
                                     ></span>
                                 </div>
+                            @endif
+                        </div>
+                    </section>
+                @endforeach
+            </div>
+        </section>
+
+        <section class="tv-indicators" aria-label="{{ __('trading.sections.ma') }}">
+            <p class="tv-indicators__note">{{ __('trading.notes.ma') }}</p>
+            <div class="tv-workspace__gauges">
+                @foreach ($indicatorFrames as $frame)
+                    <section class="tv-panel tv-panel--ma" wire:key="ma-{{ $symbol }}-{{ $frame['label'] }}">
+                        <div class="tv-panel__label">
+                            <span class="tv-panel__frame">{{ $frame['label'] }}</span>
+                            <span class="tv-panel__name">{{ __('trading.sections.ma') }}</span>
+                        </div>
+                        <div class="tv-panel__host tv-panel__host--indicator tv-ma">
+                            @if (($frame['ma'] ?? null) === null)
+                                <p class="tv-indicator__empty">{{ __('trading.notices.unsupported') }}</p>
+                            @else
+                                <span class="tv-ma__icon is-{{ $frame['ma']['tone'] }}" aria-hidden="true">
+                                    @if ($frame['ma']['tone'] === 'buy')
+                                        ▲
+                                    @elseif ($frame['ma']['tone'] === 'sell')
+                                        ▼
+                                    @else
+                                        ◆
+                                    @endif
+                                </span>
+                                <p class="tv-ma__status is-{{ $frame['ma']['tone'] }}">{{ __('trading.ma.'.$frame['ma']['key']) }}</p>
+                                <div class="tv-ma__meta">
+                                    <span>{{ __('trading.ma.ema50') }} {{ $frame['ma']['short'] }}</span>
+                                    <span>{{ __('trading.ma.ema200') }} {{ $frame['ma']['long'] }}</span>
+                                </div>
+                            @endif
+                        </div>
+                    </section>
+                @endforeach
+            </div>
+        </section>
+
+        <section class="tv-indicators" aria-label="{{ __('trading.sections.bollinger') }}">
+            <p class="tv-indicators__note">{{ __('trading.notes.bollinger') }}</p>
+            <div class="tv-workspace__gauges">
+                @foreach ($indicatorFrames as $frame)
+                    <section class="tv-panel tv-panel--bollinger" wire:key="bb-{{ $symbol }}-{{ $frame['label'] }}">
+                        <div class="tv-panel__label">
+                            <span class="tv-panel__frame">{{ $frame['label'] }}</span>
+                            <span class="tv-panel__name">{{ __('trading.sections.bollinger') }}</span>
+                        </div>
+                        <div class="tv-panel__host tv-panel__host--indicator tv-bb">
+                            @if (($frame['bollinger'] ?? null) === null)
+                                <p class="tv-indicator__empty">{{ __('trading.notices.unsupported') }}</p>
+                            @else
+                                <p class="tv-bb__badge is-{{ $frame['bollinger']['tone'] }}">{{ __('trading.bollinger.'.$frame['bollinger']['key']) }}</p>
+                                <div class="tv-bb__meter" aria-hidden="true">
+                                    <span class="tv-bb__band"></span>
+                                    <span class="tv-bb__mid"></span>
+                                    <span class="tv-bb__price" style="left: {{ $frame['bollinger']['position'] }}%"></span>
+                                </div>
+                                <div class="tv-bb__scale" aria-hidden="true">
+                                    <span>{{ __('trading.bollinger.lower') }}</span>
+                                    <span>{{ __('trading.bollinger.basis') }}</span>
+                                    <span>{{ __('trading.bollinger.upper') }}</span>
+                                </div>
+                                <p class="tv-bb__width">{{ __('trading.bollinger.width', ['value' => $frame['bollinger']['width_display']]) }}</p>
+                            @endif
+                        </div>
+                    </section>
+                @endforeach
+            </div>
+        </section>
+
+        <section class="tv-indicators" aria-label="{{ __('trading.sections.pivot') }}">
+            <p class="tv-indicators__note">{{ __('trading.notes.pivot') }}</p>
+            <div class="tv-workspace__gauges">
+                @foreach ($indicatorFrames as $frame)
+                    <section class="tv-panel tv-panel--pivot" wire:key="pivot-{{ $symbol }}-{{ $frame['label'] }}">
+                        <div class="tv-panel__label">
+                            <span class="tv-panel__frame">{{ $frame['label'] }}</span>
+                            <span class="tv-panel__name">{{ __('trading.sections.pivot') }}</span>
+                        </div>
+                        <div class="tv-panel__host tv-panel__host--indicator tv-pivot">
+                            @if (($frame['pivot'] ?? null) === null)
+                                <p class="tv-indicator__empty">{{ __('trading.notices.unsupported') }}</p>
+                            @else
+                                <table class="tv-pivot__table">
+                                    <tbody>
+                                        <tr class="is-resistance">
+                                            <th scope="row">{{ __('trading.pivot.r2') }}</th>
+                                            <td>{{ $frame['pivot']['r2'] }}</td>
+                                        </tr>
+                                        <tr class="is-resistance">
+                                            <th scope="row">{{ __('trading.pivot.r1') }}</th>
+                                            <td>{{ $frame['pivot']['r1'] }}</td>
+                                        </tr>
+                                        <tr class="is-pivot">
+                                            <th scope="row">{{ __('trading.pivot.pp') }}</th>
+                                            <td>{{ $frame['pivot']['pp'] }}</td>
+                                        </tr>
+                                        <tr class="is-support">
+                                            <th scope="row">{{ __('trading.pivot.s1') }}</th>
+                                            <td>{{ $frame['pivot']['s1'] }}</td>
+                                        </tr>
+                                        <tr class="is-support">
+                                            <th scope="row">{{ __('trading.pivot.s2') }}</th>
+                                            <td>{{ $frame['pivot']['s2'] }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             @endif
                         </div>
                     </section>
@@ -145,6 +261,8 @@
             },
             theme: 'light',
             observer: null,
+            resizeObserver: null,
+            fittedWidth: 0,
             onWidgetMessage: null,
             renderToken: 0,
 
@@ -168,6 +286,9 @@
                     attributeFilter: ['class'],
                 })
 
+                this.resizeObserver = new ResizeObserver(() => this.fitMountedWidgets())
+                this.resizeObserver.observe(this.$root)
+
                 this.$watch('symbol', () => {
                     this.renderAllWidgets()
                 })
@@ -176,6 +297,7 @@
             destroy() {
                 window.removeEventListener('message', this.onWidgetMessage)
                 this.observer?.disconnect()
+                this.resizeObserver?.disconnect()
             },
 
             handleWidgetMessage(event) {
@@ -223,6 +345,33 @@
                     })
 
                     this.mountInvestingSummaries()
+                    this.fittedWidth = this.$root.clientWidth
+                })
+            },
+
+            fitMountedWidgets() {
+                const width = this.$root.clientWidth
+
+                if (! width || width === this.fittedWidth) {
+                    return
+                }
+
+                this.fittedWidth = width
+
+                this.$root.querySelectorAll('.tv-panel__host--gauge[data-interval]').forEach((host) => {
+                    const container = host.querySelector('.tv-gauge-frame')
+
+                    if (container) {
+                        this.positionGauge(host, container)
+                    }
+                })
+
+                this.$root.querySelectorAll('.tv-investing__frame').forEach((frame) => {
+                    const host = frame.closest('.tv-panel__host--investing')
+
+                    if (host && frame.getAttribute('src')) {
+                        this.fitInvestingFrame(frame, host)
+                    }
                 })
             },
 
@@ -301,22 +450,10 @@
             },
 
             mountTechnicalAnalysis(host, interval) {
-                const naturalWidth = 425
-                const naturalHeight = 450
-                const cardWidth = Math.max(host?.clientWidth || 0, 120)
-                const cardHeight = Math.max(host?.clientHeight || 0, 150)
-                const scale = cardWidth / naturalWidth
-                const visibleSpan = cardHeight / scale
-                const contentCenter = 228
-                const offset = Math.max(0, Math.min(
-                    naturalHeight - visibleSpan,
-                    contentCenter - (visibleSpan / 2),
-                ))
-
                 this.mountWidget(host, 'https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js', {
                     interval,
-                    width: naturalWidth,
-                    height: naturalHeight,
+                    width: 425,
+                    height: 450,
                     isTransparent: true,
                     symbol: this.symbol,
                     showIntervalTabs: false,
@@ -332,6 +469,22 @@
                 }
 
                 container.classList.add('tv-gauge-frame')
+                this.positionGauge(host, container)
+            },
+
+            positionGauge(host, container) {
+                const naturalWidth = 425
+                const naturalHeight = 450
+                const cardWidth = Math.max(host?.clientWidth || 0, 120)
+                const cardHeight = Math.max(host?.clientHeight || 0, 150)
+                const scale = cardWidth / naturalWidth
+                const visibleSpan = cardHeight / scale
+                const contentCenter = 228
+                const offset = Math.max(0, Math.min(
+                    naturalHeight - visibleSpan,
+                    contentCenter - (visibleSpan / 2),
+                ))
+
                 container.style.left = '50%'
                 container.style.marginLeft = (-naturalWidth / 2) + 'px'
                 container.style.top = '0'

@@ -24,7 +24,7 @@ class PageInfoTest extends TestCase
     public function test_guests_cannot_open_page_info_management_or_the_standalone_view(): void
     {
         $this->get('/admin/settings/page-infos')->assertRedirect('/admin/login');
-        $this->get('/page-info/trading-view')->assertRedirect('/admin/login');
+        $this->get('/page-info/signals')->assertRedirect('/admin/login');
     }
 
     public function test_regular_users_can_read_the_trading_guide_but_cannot_edit_it(): void
@@ -32,7 +32,7 @@ class PageInfoTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->get('/admin/trading/trading-view')
+            ->get('/admin/trading/signals')
             ->assertOk()
             ->assertSee('Page information', false)
             ->assertSee('User Guide', false)
@@ -44,7 +44,7 @@ class PageInfoTest extends TestCase
             ->assertForbidden();
 
         $this->actingAs($user)
-            ->get('/page-info/trading-view')
+            ->get('/page-info/signals')
             ->assertOk()
             ->assertSee('AI Master Prompt', false)
             ->assertSee('AgriCart trading desk assistant', false);
@@ -62,7 +62,7 @@ class PageInfoTest extends TestCase
             ->get('/admin/settings/page-infos')
             ->assertOk()
             ->assertSee('Page Info', false)
-            ->assertSee('trading-view', false);
+            ->assertSee('signals', false);
 
         Livewire::actingAs($user)
             ->test(CreatePageInfo::class)

@@ -15,15 +15,15 @@ class TradingView extends Page
 
     protected static ?string $cluster = TradingCluster::class;
 
-    protected static ?string $slug = 'trading-view';
+    protected static ?string $slug = 'signals';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPresentationChartLine;
 
-    protected static string $translationKey = 'trading_view';
+    protected static string $translationKey = 'signals';
 
-    protected static ?string $navigationLabel = 'TradingView';
+    protected static ?string $navigationLabel = 'Signals';
 
-    protected static ?string $title = 'TradingView';
+    protected static ?string $title = 'Signals';
 
     protected static ?int $navigationSort = 1;
 
@@ -124,9 +124,9 @@ class TradingView extends Page
     ];
 
     /**
-     * RSI and MACD readings for the six summary timeframes.
+     * Indicator readings for the six summary timeframes.
      *
-     * @var list<array{label: string, rsi: array{value: float, display: string, width: float, tone: string, label: string}|null, macd: array{histogram: float, display: string, strength: float, tone: string, label: string}|null}>
+     * @var list<array<string, mixed>>
      */
     public array $indicatorFrames = [];
 

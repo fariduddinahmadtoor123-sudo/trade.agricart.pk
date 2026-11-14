@@ -1,0 +1,11 @@
+<x-filament-panels::page>
+    <section class="tv-placeholder" aria-labelledby="smart-alerts-title">
+        <header class="tv-placeholder__header">
+            <p class="tv-placeholder__eyebrow">{{ __('trading.nav.trading') }}</p>
+            <h2 id="smart-alerts-title" class="tv-placeholder__title">{{ __('trading.nav.smart_alerts') }}</h2>
+        </header>
+        <div class="tv-placeholder__body">
+            <p>{{ __('trading.placeholders.smart_alerts') }}</p>
+        </div>
+    </section>
+</x-filament-panels::page>

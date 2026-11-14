@@ -20,7 +20,7 @@ class PageInfoForm
                             ->maxLength(255),
                         TextInput::make('page_slug')
                             ->label('Page slug')
-                            ->helperText('Matches the page address, for example trading-view.')
+                            ->helperText('Matches the page address, for example signals.')
                             ->required()
                             ->maxLength(100)
                             ->alphaDash()
