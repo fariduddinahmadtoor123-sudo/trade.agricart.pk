@@ -24,7 +24,7 @@ class Mt5Terminal extends Page
 
     protected static ?string $title = 'MT5 Terminal';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 5;
 
     protected string $view = 'trading::filament.pages.mt5-terminal';
 }

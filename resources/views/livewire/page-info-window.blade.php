@@ -2,21 +2,21 @@
     class="page-info"
     x-data="{
         open: false,
-        minimized: false,
         maximized: false,
         copied: null,
+        fontScale: Number(localStorage.getItem('agricart:page-info:font-scale') || 1),
         x: 0,
         y: 0,
         show() {
             this.open = true
-            this.minimized = false
         },
         minimize() {
-            this.minimized = true
+            this.open = false
+            this.maximized = false
         },
         restore() {
             this.open = true
-            this.minimized = false
+            this.maximized = false
         },
         toggleMax() {
             this.maximized = !this.maximized
@@ -25,10 +25,17 @@
         },
         close() {
             this.open = false
-            this.minimized = false
             this.maximized = false
             this.x = 0
             this.y = 0
+        },
+        smallerText() {
+            this.fontScale = Math.max(0.85, Number((this.fontScale - 0.1).toFixed(2)))
+            localStorage.setItem('agricart:page-info:font-scale', String(this.fontScale))
+        },
+        largerText() {
+            this.fontScale = Math.min(1.45, Number((this.fontScale + 0.1).toFixed(2)))
+            localStorage.setItem('agricart:page-info:font-scale', String(this.fontScale))
         },
         async copy(text, key) {
             try {
@@ -82,7 +89,7 @@
     </button>
 
     <section
-        x-show="open && !minimized"
+        x-show="open"
         x-cloak
         x-transition.opacity.duration.150ms
         class="fixed z-[60] flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-900 shadow-2xl dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
@@ -98,6 +105,10 @@
         >
             <h2 class="min-w-0 flex-1 truncate text-sm font-bold">{{ $title }}</h2>
             <div class="flex shrink-0 items-center gap-1" x-on:pointerdown.stop>
+                <div class="page-info-text-size" role="group" aria-label="{{ __('trading.page_info.text_size') }}">
+                    <button type="button" class="page-info-text-size__btn" x-on:click="smallerText()" aria-label="{{ __('trading.page_info.text_smaller') }}" title="{{ __('trading.page_info.text_smaller') }}">{{ __('trading.page_info.text_smaller') }}</button>
+                    <button type="button" class="page-info-text-size__btn" x-on:click="largerText()" aria-label="{{ __('trading.page_info.text_larger') }}" title="{{ __('trading.page_info.text_larger') }}">{{ __('trading.page_info.text_larger') }}</button>
+                </div>
                 @if ($standaloneUrl)
                     <a
                         href="{{ $standaloneUrl }}"
@@ -117,9 +128,9 @@
             </div>
         </header>
 
-        <div class="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
+        <div class="page-info-body min-h-0 flex-1 space-y-4 overflow-y-auto p-4" x-bind:style="`--page-info-scale: ${fontScale}`">
             @if (blank($userGuide) && blank($aiPrompt))
-                <p class="text-sm font-semibold text-slate-500 dark:text-slate-400">{{ __('trading.page_info.empty') }}</p>
+                <p class="page-info-copy text-sm font-semibold text-slate-500 dark:text-slate-400">{{ __('trading.page_info.empty') }}</p>
             @endif
 
             @if (filled($userGuide))
@@ -131,7 +142,7 @@
                             <span x-show="copied === 'guide'" x-cloak>{{ __('trading.page_info.copied') }}</span>
                         </button>
                     </div>
-                    <div class="whitespace-pre-wrap break-words text-sm font-bold leading-6">{{ $userGuide }}</div>
+                    <div class="page-info-copy whitespace-pre-wrap break-words font-bold">{{ $userGuide }}</div>
                 </section>
             @endif
 
@@ -144,26 +155,25 @@
                             <span x-show="copied === 'prompt'" x-cloak>{{ __('trading.page_info.copied') }}</span>
                         </button>
                     </div>
-                    <div class="whitespace-pre-wrap break-words text-sm font-bold leading-6">{{ $aiPrompt }}</div>
+                    <div class="page-info-copy whitespace-pre-wrap break-words font-bold">{{ $aiPrompt }}</div>
                 </section>
             @endif
         </div>
     </section>
 
     <div
-        x-show="minimized"
-        x-cloak
-        class="fixed inset-x-0 bottom-0 z-[70] flex h-11 items-center gap-2 border-t border-white/10 bg-slate-950 px-3"
+        class="page-info-dock fixed inset-x-0 bottom-0 z-[70] flex h-11 items-center gap-2 border-t border-white/10 bg-slate-950 px-3"
         role="toolbar"
-        aria-label="{{ __('trading.page_info.minimized') }}"
+        aria-label="{{ __('trading.page_info.dock') }}"
     >
         <button
             type="button"
             class="inline-flex h-8 max-w-xs items-center truncate rounded-md bg-emerald-500/20 px-3 text-sm font-bold text-emerald-200 hover:bg-emerald-500/30"
             x-on:click="restore()"
+            aria-label="{{ __('trading.page_info.open_dock') }}"
+            title="{{ __('trading.page_info.open_dock') }}"
         >
             {{ $title }}
         </button>
-        <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-sm font-bold text-slate-300 hover:bg-white/10" x-on:click="close()" aria-label="{{ __('trading.page_info.close') }} {{ $title }}">×</button>
     </div>
 </div>

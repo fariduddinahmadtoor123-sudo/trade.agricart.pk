@@ -88,10 +88,26 @@ class TradingView extends Page
     public array $investingPairs = [
         'OANDA:XAUUSD' => ['group' => 'forex', 'id' => 68],
         'OANDA:XAGUSD' => ['group' => 'forex', 'id' => 69],
+        'FOREXCOM:USOIL' => ['group' => 'commodities', 'id' => 8849],
         'FX:EURUSD' => ['group' => 'forex', 'id' => 1],
         'FX:GBPUSD' => ['group' => 'forex', 'id' => 2],
         'FX:USDJPY' => ['group' => 'forex', 'id' => 3],
         'BINANCE:BTCUSDT' => ['group' => 'stocks', 'id' => 945629],
+    ];
+
+    /**
+     * Myfxbook Community Outlook symbol IDs for the official embed.
+     * Covers majors + gold/silver. Crude oil is not in Myfxbook's outlook list.
+     * TradingView has no official long/short sentiment embed (only Technical Analysis gauges).
+     *
+     * @var array<string, int>
+     */
+    public array $myfxbookSentimentSymbols = [
+        'FX:EURUSD' => 1,
+        'FX:GBPUSD' => 2,
+        'FX:USDJPY' => 3,
+        'OANDA:XAUUSD' => 51,
+        'OANDA:XAGUSD' => 50,
     ];
 
     /**

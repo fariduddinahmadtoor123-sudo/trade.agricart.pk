@@ -1,3 +1,7 @@
+:root {
+    --agricart-dock-height: 2.75rem;
+}
+
 .page-info,
 .page-info * {
     box-sizing: border-box;
@@ -5,6 +9,15 @@
 
 .page-info {
     font-family: Arial, sans-serif;
+}
+
+.page-info-dock {
+    height: var(--agricart-dock-height);
+}
+
+.fi-body:has(.page-info-dock) .fi-main,
+.fi-body:has(.page-info-dock) .fi-page-content {
+    padding-bottom: calc(var(--agricart-dock-height) + 0.5rem) !important;
 }
 
 .page-info button,
@@ -137,3 +150,47 @@ html[dir="rtl"] .page-info .page-info-launch { right: auto; left: 0.75rem; }
 .dark .page-info .dark\:bg-slate-900 { background: #0f172a; }
 .dark .page-info .dark\:text-slate-100 { color: #f1f5f9; }
 .dark .page-info .dark\:text-slate-400 { color: #94a3b8; }
+
+.page-info .page-info-text-size {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    margin-inline-end: 0.2rem;
+    padding: 0.1rem;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 0.45rem;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.page-info .page-info-text-size--light {
+    border-color: rgba(15, 23, 42, 0.12);
+    background: #ffffff;
+}
+
+.page-info .page-info-text-size__btn {
+    min-width: 1.75rem;
+    height: 1.55rem;
+    padding: 0 0.4rem;
+    border-radius: 0.3rem;
+    color: #e2e8f0;
+    font-size: 0.75rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.page-info .page-info-text-size--light .page-info-text-size__btn {
+    color: #0f172a;
+}
+
+.page-info .page-info-text-size__btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.page-info .page-info-text-size--light .page-info-text-size__btn:hover {
+    background: rgba(16, 185, 129, 0.12);
+}
+
+.page-info .page-info-copy {
+    font-size: calc(0.875rem * var(--page-info-scale, 1));
+    line-height: calc(1.5rem * var(--page-info-scale, 1));
+}

@@ -4,6 +4,9 @@
         x-data="tradingViewWorkspace(@js([
             'symbol' => $symbol,
             'investingPairs' => $investingPairs,
+            'myfxbookSentimentSymbols' => $myfxbookSentimentSymbols,
+            'myfxbookOutlookEmbedBase' => url('/trading/embeds/myfxbook-outlook'),
+            'symbolLabels' => $this->symbolLabels(),
         ]))"
         x-init="init()"
         class="tv-workspace"
@@ -36,6 +39,50 @@
             {{ __('trading.notices.unsupported') }}
         </p>
 
+        <section class="tv-indicators" aria-label="{{ __('trading.sections.pivot') }}">
+            <p class="tv-indicators__note">{{ __('trading.notes.pivot') }}</p>
+            <div class="tv-workspace__gauges">
+                @foreach ($indicatorFrames as $frame)
+                    <section class="tv-panel tv-panel--pivot" wire:key="pivot-{{ $symbol }}-{{ $frame['label'] }}">
+                        <div class="tv-panel__label">
+                            <span class="tv-panel__frame">{{ $frame['label'] }}</span>
+                            <span class="tv-panel__name">{{ __('trading.sections.pivot') }}</span>
+                        </div>
+                        <div class="tv-panel__host tv-panel__host--indicator tv-pivot">
+                            @if (($frame['pivot'] ?? null) === null)
+                                <p class="tv-indicator__empty">{{ __('trading.notices.unsupported') }}</p>
+                            @else
+                                <table class="tv-pivot__table">
+                                    <tbody>
+                                        <tr class="is-resistance">
+                                            <th scope="row">{{ __('trading.pivot.r2') }}</th>
+                                            <td>{{ $frame['pivot']['r2'] }}</td>
+                                        </tr>
+                                        <tr class="is-resistance">
+                                            <th scope="row">{{ __('trading.pivot.r1') }}</th>
+                                            <td>{{ $frame['pivot']['r1'] }}</td>
+                                        </tr>
+                                        <tr class="is-pivot">
+                                            <th scope="row">{{ __('trading.pivot.pp') }}</th>
+                                            <td>{{ $frame['pivot']['pp'] }}</td>
+                                        </tr>
+                                        <tr class="is-support">
+                                            <th scope="row">{{ __('trading.pivot.s1') }}</th>
+                                            <td>{{ $frame['pivot']['s1'] }}</td>
+                                        </tr>
+                                        <tr class="is-support">
+                                            <th scope="row">{{ __('trading.pivot.s2') }}</th>
+                                            <td>{{ $frame['pivot']['s2'] }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            @endif
+                        </div>
+                    </section>
+                @endforeach
+            </div>
+        </section>
+
         <div class="tv-workspace__gauges">
             @foreach ($gauges as $gauge)
                 <section class="tv-panel tv-panel--gauge">
@@ -67,12 +114,33 @@
                                     referrerpolicy="no-referrer-when-downgrade"
                                 ></iframe>
                             </div>
-                            <p class="tv-investing__empty" x-show="!investingSelection()" x-cloak>
-                                {{ __('trading.notices.investing_missing') }}
+                            <p class="tv-investing__empty" x-show="!investingSelection()" x-cloak role="status">
+                                {{ __('trading.notices.data_unavailable') }}
                             </p>
                         </div>
                     </section>
                 @endforeach
+            </div>
+        </section>
+
+        <section class="tv-sentiment" aria-label="{{ __('trading.sections.sentiment') }}">
+            <header class="tv-sentiment__header">
+                <p class="tv-sentiment__eyebrow">{{ __('trading.sections.sentiment') }}</p>
+            </header>
+
+            <div class="tv-sentiment__panel" wire:ignore>
+                <iframe
+                    class="tv-sentiment__frame"
+                    x-show="sentimentUrl()"
+                    x-cloak
+                    :src="sentimentUrl() || 'about:blank'"
+                    :title="sentimentTitle()"
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade"
+                ></iframe>
+                <p class="tv-sentiment__empty" x-show="!sentimentUrl()" x-cloak role="status">
+                    {{ __('trading.notices.data_unavailable') }}
+                </p>
             </div>
         </section>
 
@@ -195,49 +263,6 @@
             </div>
         </section>
 
-        <section class="tv-indicators" aria-label="{{ __('trading.sections.pivot') }}">
-            <p class="tv-indicators__note">{{ __('trading.notes.pivot') }}</p>
-            <div class="tv-workspace__gauges">
-                @foreach ($indicatorFrames as $frame)
-                    <section class="tv-panel tv-panel--pivot" wire:key="pivot-{{ $symbol }}-{{ $frame['label'] }}">
-                        <div class="tv-panel__label">
-                            <span class="tv-panel__frame">{{ $frame['label'] }}</span>
-                            <span class="tv-panel__name">{{ __('trading.sections.pivot') }}</span>
-                        </div>
-                        <div class="tv-panel__host tv-panel__host--indicator tv-pivot">
-                            @if (($frame['pivot'] ?? null) === null)
-                                <p class="tv-indicator__empty">{{ __('trading.notices.unsupported') }}</p>
-                            @else
-                                <table class="tv-pivot__table">
-                                    <tbody>
-                                        <tr class="is-resistance">
-                                            <th scope="row">{{ __('trading.pivot.r2') }}</th>
-                                            <td>{{ $frame['pivot']['r2'] }}</td>
-                                        </tr>
-                                        <tr class="is-resistance">
-                                            <th scope="row">{{ __('trading.pivot.r1') }}</th>
-                                            <td>{{ $frame['pivot']['r1'] }}</td>
-                                        </tr>
-                                        <tr class="is-pivot">
-                                            <th scope="row">{{ __('trading.pivot.pp') }}</th>
-                                            <td>{{ $frame['pivot']['pp'] }}</td>
-                                        </tr>
-                                        <tr class="is-support">
-                                            <th scope="row">{{ __('trading.pivot.s1') }}</th>
-                                            <td>{{ $frame['pivot']['s1'] }}</td>
-                                        </tr>
-                                        <tr class="is-support">
-                                            <th scope="row">{{ __('trading.pivot.s2') }}</th>
-                                            <td>{{ $frame['pivot']['s2'] }}</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            @endif
-                        </div>
-                    </section>
-                @endforeach
-            </div>
-        </section>
     </div>
 
     @script
@@ -247,6 +272,9 @@
             symbolNotice: false,
             gaugeReady: false,
             investingPairs: config.investingPairs,
+            myfxbookSentimentSymbols: config.myfxbookSentimentSymbols ?? {},
+            myfxbookOutlookEmbedBase: config.myfxbookOutlookEmbedBase ?? '',
+            symbolLabels: config.symbolLabels ?? {},
             investingGroups: {
                 forex: [1, 2, 3, 5, 7, 9, 10],
                 commodities: [8830, 8836, 8831, 8849, 8833, 8862, 8832],
@@ -377,6 +405,22 @@
 
             investingSelection() {
                 return this.investingPairs[this.symbol] ?? null
+            },
+
+            sentimentUrl() {
+                const active = this.myfxbookSentimentSymbols[this.symbol]
+
+                if (! active || ! this.myfxbookOutlookEmbedBase) {
+                    return null
+                }
+
+                return String(this.myfxbookOutlookEmbedBase).replace(/\/$/, '') + '/' + String(active)
+            },
+
+            sentimentTitle() {
+                const label = this.symbolLabels[this.symbol] ?? this.symbol
+
+                return @js(__('trading.sections.sentiment')) + ' · ' + label
             },
 
             pairList(selectedId, fallback) {

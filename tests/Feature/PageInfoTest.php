@@ -35,6 +35,8 @@ class PageInfoTest extends TestCase
             ->get('/admin/trading/signals')
             ->assertOk()
             ->assertSee('Page information', false)
+            ->assertSee('page-info-dock', false)
+            ->assertSee('Workspace dock', false)
             ->assertSee('User Guide', false)
             ->assertSee('AI Master Prompt', false)
             ->assertSee('Buying Area / Oversold under 30', false);

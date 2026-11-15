@@ -4,8 +4,10 @@ namespace Modules\Trading\Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
+use Modules\Trading\Filament\Pages\EconomicCalendarPage;
 use Modules\Trading\Filament\Pages\TradingView;
 use Tests\TestCase;
 
@@ -19,6 +21,7 @@ class TradingFilamentPagesTest extends TestCase
 
         // Filament only allows non-FilamentUser models in the local environment.
         config(['app.env' => 'local']);
+        Cache::flush();
 
         Http::fake([
             'scanner.tradingview.com/*' => Http::response([
@@ -96,6 +99,16 @@ class TradingFilamentPagesTest extends TestCase
             ->assertDontSee('by TradingView', false)
             ->assertSee('ssltsw.investing.com', false)
             ->assertSee('945629', false)
+            ->assertSee('Market Sentiment', false)
+            ->assertSee('tv-sentiment', false)
+            ->assertSee('myfxbook-outlook', false)
+            ->assertSee('Data not available', false)
+            ->assertSee('FOREXCOM:USOIL', false)
+            ->assertSee('8849', false)
+            ->assertDontSee('Community Outlook by Myfxbook', false)
+            ->assertDontSee('Shows Myfxbook community long/short positioning for the selected symbol when that pair is available.', false)
+            ->assertDontSee('Sentiment data for this symbol is not available from Myfxbook.', false)
+            ->assertDontSee('Investing.com does not publish a technical summary for this symbol.', false)
             ->assertSee('data-timeframe="900"', false)
             ->assertSee('data-timeframe="1800"', false)
             ->assertSee('data-timeframe="3600"', false)
@@ -106,14 +119,73 @@ class TradingFilamentPagesTest extends TestCase
 
         $this->actingAs($user)->get('/admin/trading/open-trades')->assertOk();
         $this->actingAs($user)->get('/admin/trading/mt5-terminal')->assertOk();
+
+        $this->actingAs($user)
+            ->get('/admin/trading/sessions')
+            ->assertOk()
+            ->assertSee('Market Sessions', false)
+            ->assertSee('Global Market Sessions', false)
+            ->assertSee('ff-sessions', false)
+            ->assertSee('ff-sessions__gauge', false)
+            ->assertSee('ff-sessions__lane', false)
+            ->assertSee('ff-sessions__segment', false)
+            ->assertSee('ff-sessions__now', false)
+            ->assertDontSee('ff-sessions__overlap-divider', false)
+            ->assertDontSee('Sydney–Tokyo', false)
+            ->assertSee('London', false)
+            ->assertSee('New York', false)
+            ->assertSee('Sydney', false)
+            ->assertSee('Tokyo', false)
+            ->assertSee('13:00–22:00 PKT', false);
+
         $this->actingAs($user)
             ->get('/admin/trading/calendar')
             ->assertOk()
-            ->assertSee('Economic Calendar / News', false);
+            ->assertSeeInOrder([
+                'Signals',
+                'Economic Calendar / News',
+                'Market Sessions',
+                'Open Trades',
+            ], false)
+            ->assertDontSee('Forex Factory', false)
+            ->assertDontSee('high-impact fundamental news', false)
+            ->assertSee('features=datepicker,filters', false)
+            ->assertDontSee('features=timezone', false)
+            ->assertSee('ff-calendar__split', false)
+            ->assertSee('ff-calendar__rail', false)
+            ->assertSee('ff-calendar__highlights', false)
+            ->assertSee('ff-calendar__countdown', false)
+            ->assertSee('Next High-Impact USD Data', false)
+            ->assertSee('Speeches stay in the calendar', false)
+            ->assertSee('Upcoming Highlights', false)
+            ->assertSee('ff-calendar__side', false)
+            ->assertSee('ff-calendar__legend', false)
+            ->assertSee('ff-calendar__clock', false)
+            ->assertSee('sslecal2.investing.com', false)
+            ->assertSee('ff-calendar__investing', false)
+            ->assertSee('Local timezone', false)
+            ->assertSee('Legend', false)
+            ->assertSee('Event Types', false)
+            ->assertSee('Volatility / Impact', false)
+            ->assertSee('Speech', false)
+            ->assertSee('High Volatility Expected', false)
+            ->assertSee('ff-calendar__usd-ref', false)
+            ->assertSee('High-Impact USD Data Reference', false)
+            ->assertSee('FOMC Rate Decision', false)
+            ->assertSee('Non-Farm Payrolls (NFP)', false)
+            ->assertSee('Retail Sales', false)
+            ->assertSee('ff-calendar__select', false)
+            ->assertSee('Today', false)
+            ->assertSee('This week', false)
+            ->assertSee('page-info-dock', false)
+            ->assertDontSee('Economic releases and market headlines will appear in this space.', false);
         $this->actingAs($user)
             ->get('/admin/trading/alerts')
             ->assertOk()
-            ->assertSee('Smart Alerts', false);
+            ->assertSee('Smart Alerts', false)
+            ->assertSee('Alert Rules', false)
+            ->assertSee('Triggered and Upcoming Alerts', false)
+            ->assertDontSee('Price and signal alerts will appear in this space.', false);
         $this->actingAs($user)->get('/admin/trading/python-bridge-logs')->assertOk();
     }
 
@@ -147,5 +219,41 @@ class TradingFilamentPagesTest extends TestCase
         Http::assertSent(function ($request): bool {
             return ($request->data()['symbols']['tickers'][0] ?? null) === 'FX:EURUSD';
         });
+    }
+
+    public function test_economic_calendar_investing_filters_update_the_official_widget_url(): void
+    {
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)
+            ->test(EconomicCalendarPage::class)
+            ->assertSee('sslecal2.investing.com', false)
+            ->assertSee('calType=day', false)
+            ->assertSee('timeZone=14', false)
+            ->assertSee('countries=25,32,6,37,72', false)
+            ->assertSee('importance=1,2,3', false)
+            ->assertSee('features=datepicker,filters', false)
+            ->assertDontSee('features=timezone', false)
+            ->assertSee('Legend')
+            ->assertSee('Speech')
+            ->assertSee('Local timezone')
+            ->call('syncInvestingTimeZoneFromBrowser', 5)
+            ->assertSee('timeZone=22', false)
+            ->assertSee('ff-calendar__select', false)
+            ->call('setInvestingRange', 'week')
+            ->assertSee('calType=week', false)
+            ->call('setInvestingImpactFilter', 'high')
+            ->assertSee('importance=3', false)
+            ->assertDontSee('importance=1,2,3', false)
+            ->call('setInvestingImpactFilter', 'low')
+            ->assertSee('importance=1', false)
+            ->assertDontSee('importance=3', false)
+            ->call('setInvestingImpactFilter', 'all')
+            ->assertSee('importance=1,2,3', false)
+            ->call('setInvestingCurrencyFilter', 'JPY')
+            ->assertSee('countries=35', false)
+            ->assertDontSee('countries=5,72,4,35', false)
+            ->call('setInvestingCurrencyFilter', 'all')
+            ->assertSee('countries=25,32,6,37,72', false);
     }
 }
