@@ -2,7 +2,9 @@
 
 namespace Modules\Trading\Providers;
 
-use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Gate;
+use Modules\Trading\Models\PropAccount;
+use Modules\Trading\Policies\PropAccountPolicy;
 use Nwidart\Modules\Support\ModuleServiceProvider;
 
 class TradingServiceProvider extends ModuleServiceProvider
@@ -33,6 +35,13 @@ class TradingServiceProvider extends ModuleServiceProvider
         EventServiceProvider::class,
         RouteServiceProvider::class,
     ];
+
+    public function boot(): void
+    {
+        parent::boot();
+
+        Gate::policy(PropAccount::class, PropAccountPolicy::class);
+    }
 
     /**
      * Define module schedules.

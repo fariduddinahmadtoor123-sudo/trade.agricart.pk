@@ -26,7 +26,7 @@ class MyfxbookOutlookEmbedController extends Controller
         abort_unless(in_array($symbolId, self::ALLOWED_SYMBOL_IDS, true), 404);
 
         $html = Cache::remember(
-            'trading:myfxbook-outlook-embed:v2:'.$symbolId,
+            'trading:myfxbook-outlook-embed:v4:'.$symbolId,
             now()->addMinutes(5),
             fn (): string => $this->fetchPaddedWidget($symbolId),
         );
@@ -70,12 +70,11 @@ class MyfxbookOutlookEmbedController extends Controller
 
         $inject = '<base href="'.e(self::ASSET_BASE).'">'
             .'<style id="agricart-sentiment-room">'
-            .'html,body{margin:0!important;padding:0!important;background:#fff!important;overflow:hidden!important;}'
-            .'body{box-sizing:border-box!important;}'
+            .'html,body{margin:0!important;background:transparent!important;overflow:visible!important;}'
+            .'body{box-sizing:border-box!important;padding:170px 0 0!important;}'
             .'.boxTitle,.boxTitle *{display:none!important;}'
-            .'.box_cont,#outlookCont{margin:0!important;padding:0!important;}'
-            .'#outlookSymbolsTable{margin:0!important;}'
-            .'.tpd-tooltip,.tpd-content-wrapper{z-index:99999!important;}'
+            .'.box_cont,#outlookCont,#outlookSymbolsTable{margin:0!important;background:#fff!important;}'
+            .'.t_Tooltip{z-index:99999!important;}'
             .'</style>';
 
         if (preg_match('/<head([^>]*)>/i', $html) === 1) {

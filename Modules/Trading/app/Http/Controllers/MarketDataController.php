@@ -7,6 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Modules\Trading\Http\Requests\StoreMarketDataRequest;
 use Modules\Trading\Models\TradingLog;
+use Modules\Trading\Services\PropBridgeSnapshot;
 use Modules\Trading\Transformers\TradingLogResource;
 
 class MarketDataController extends Controller
@@ -21,9 +22,12 @@ class MarketDataController extends Controller
         return TradingLogResource::collection($logs);
     }
 
-    public function store(StoreMarketDataRequest $request): JsonResponse
+    public function store(StoreMarketDataRequest $request, PropBridgeSnapshot $snapshots): JsonResponse
     {
-        $logs = collect($request->ticks())->map(function (array $tick): TradingLog {
+        $logs = collect($request->ticks())->map(function (array $tick) use ($snapshots): TradingLog {
+            $payload = $tick['payload'] ?? null;
+            $snapshots->capture(is_array($payload) ? $payload : null);
+
             return TradingLog::query()->create([
                 'symbol' => $tick['symbol'],
                 'bid' => $tick['bid'] ?? null,
@@ -31,7 +35,7 @@ class MarketDataController extends Controller
                 'last' => $tick['last'] ?? null,
                 'volume' => $tick['volume'] ?? null,
                 'source' => $tick['source'] ?? 'python-bridge',
-                'payload' => $tick['payload'] ?? null,
+                'payload' => $payload,
                 'feed_at' => $tick['feed_at'] ?? now(),
             ]);
         });

@@ -43,6 +43,8 @@ class MyfxbookOutlookEmbedTest extends TestCase
             ->assertSee('agricart-sentiment-room', false)
             ->assertSee('.boxTitle', false)
             ->assertSee('display:none', false)
+            ->assertSee('padding:170px 0 0', false)
+            ->assertSee('overflow:visible', false)
             ->assertSee('https://widgets.mfbcdn.net/', false)
             ->assertSee('XAUUSD', false);
     }

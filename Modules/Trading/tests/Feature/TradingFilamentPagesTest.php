@@ -143,10 +143,12 @@ class TradingFilamentPagesTest extends TestCase
             ->assertOk()
             ->assertSeeInOrder([
                 'Signals',
-                'Economic Calendar / News',
-                'Market Sessions',
-                'Open Trades',
+                'Calendar',
+                'Sessions',
+                'Trades',
             ], false)
+            ->assertSee('title="Economic Calendar / News"', false)
+            ->assertSee('title="Prop Accounts & Rules"', false)
             ->assertDontSee('Forex Factory', false)
             ->assertDontSee('high-impact fundamental news', false)
             ->assertSee('features=datepicker,filters', false)

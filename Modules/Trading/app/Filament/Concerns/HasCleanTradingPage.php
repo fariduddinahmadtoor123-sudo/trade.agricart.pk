@@ -2,13 +2,30 @@
 
 namespace Modules\Trading\Filament\Concerns;
 
+use Filament\Navigation\NavigationItem;
 use Illuminate\Contracts\Support\Htmlable;
 
 trait HasCleanTradingPage
 {
     public static function getNavigationLabel(): string|Htmlable
     {
-        return __('trading.nav.'.static::$translationKey);
+        return __('trading.menu.'.static::$translationKey);
+    }
+
+    /**
+     * @return array<NavigationItem>
+     */
+    public static function getNavigationItems(): array
+    {
+        $items = parent::getNavigationItems();
+
+        foreach ($items as $item) {
+            $item->extraAttributes([
+                'title' => __('trading.nav.'.static::$translationKey),
+            ], merge: true);
+        }
+
+        return $items;
     }
 
     public function getTitle(): string|Htmlable

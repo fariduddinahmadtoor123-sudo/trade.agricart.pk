@@ -5,6 +5,7 @@ namespace Modules\Trading\Tests\Feature;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Modules\Trading\Models\PropAccount;
 use Modules\Trading\Models\TradingLog;
 use Tests\TestCase;
 
@@ -89,5 +90,36 @@ class ReceiveMarketDataTest extends TestCase
         $this->getJson('/api/v1/trading/market-data')
             ->assertOk()
             ->assertJsonCount(3, 'data');
+    }
+
+    public function test_an_account_payload_updates_the_prop_snapshot(): void
+    {
+        Sanctum::actingAs(User::factory()->create());
+        $account = PropAccount::factory()->create([
+            'firm_name' => 'FundedHive',
+            'account_number' => 'FH-88',
+            'initial_balance' => 100000,
+        ]);
+
+        $this->postJson('/api/v1/trading/market-data', [
+            'symbol' => 'ACCOUNT',
+            'source' => 'mt5-bridge',
+            'payload' => [
+                'firm_name' => 'FundedHive',
+                'account_number' => 'FH-88',
+                'balance' => 100250.5,
+                'equity' => 99750,
+                'day_start_balance' => 100000,
+                'today_pnl' => -250,
+                'floating_pnl' => -500,
+            ],
+        ])->assertCreated();
+
+        $account->refresh();
+
+        $this->assertSame('100250.50', $account->current_balance);
+        $this->assertSame('99750.00', $account->equity);
+        $this->assertSame('-250.00', $account->today_pnl);
+        $this->assertNotNull($account->snapshot_at);
     }
 }
