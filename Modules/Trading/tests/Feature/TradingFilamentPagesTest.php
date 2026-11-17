@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 use Modules\Trading\Filament\Pages\EconomicCalendarPage;
+use Modules\Trading\Filament\Pages\Mt5Connector;
 use Modules\Trading\Filament\Pages\TradingView;
 use Tests\TestCase;
 
@@ -189,6 +190,56 @@ class TradingFilamentPagesTest extends TestCase
             ->assertSee('Triggered and Upcoming Alerts', false)
             ->assertDontSee('Price and signal alerts will appear in this space.', false);
         $this->actingAs($user)->get('/admin/trading/python-bridge-logs')->assertOk();
+        $this->actingAs($user)->get('/admin/trading/mt5-link')->assertOk();
+    }
+
+    public function test_guests_are_redirected_from_the_mt5_link_page(): void
+    {
+        $this->get('/admin/trading/mt5-link')->assertRedirect();
+    }
+
+    public function test_mt5_link_page_shows_a_portable_connector_for_any_account(): void
+    {
+        config([
+            'trading.mt5.bridge_token' => 'bridge-test-token',
+            'trading.mt5.laravel_token' => 'laravel-test-token',
+        ]);
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get('/admin/trading/mt5-link')
+            ->assertOk()
+            ->assertSee('Link', false)
+            ->assertSee('connect-mt5.py', false)
+            ->assertSee('start-mt5.bat', false)
+            ->assertSee('agricart-mt5-bridge\\venv\\Scripts\\python.exe', false)
+            ->assertSee('snapshot sent', false)
+            ->assertSee('numpy==2.2.6', false)
+            ->assertSee('MetaTrader 5', false)
+            ->assertSee('Copy code', false)
+            ->assertSee('Download', false)
+            ->assertSee('ڈاؤن لوڈ', false)
+            ->assertDontSee('winget install', false)
+            ->assertDontSee('py connect-mt5.py', false)
+            ->assertDontSee('Talks to the MetaTrader 5 terminal', false)
+            ->assertSee('نیا کوڈ نہیں', false)
+            ->assertSee('mt5.initialize()', false)
+            ->assertSee('laravel-test-token', false)
+            ->assertSee('bridge-test-token', false)
+            ->assertSee('os.environ["MT5_LOGIN"] = ""')
+            ->assertSee('os.environ["MT5_SERVER"] = ""')
+            ->assertSee('def ensure_terminal', false);
+
+        Livewire::actingAs($user)
+            ->test(Mt5Connector::class)
+            ->call('downloadLauncher')
+            ->assertFileDownloaded('start-mt5.bat');
+
+        Livewire::actingAs($user)
+            ->test(Mt5Connector::class)
+            ->call('downloadConnector')
+            ->assertFileDownloaded('connect-mt5.py');
     }
 
     public function test_selecting_a_sector_symbol_reloads_rsi_and_macd(): void

@@ -15,6 +15,7 @@ return [
         'mt5_terminal' => 'MT5 Terminal',
         'prop_accounts' => 'Prop Accounts & Rules',
         'python_bridge_logs' => 'Bridge Logs',
+        'mt5_link' => 'MT5 Link',
         'settings' => 'Settings',
         'page_info' => 'Page Info',
     ],
@@ -28,6 +29,7 @@ return [
         'smart_alerts' => 'Alerts',
         'prop_accounts' => 'Prop',
         'python_bridge_logs' => 'Logs',
+        'mt5_link' => 'Link',
     ],
 
     'quick' => [
@@ -212,6 +214,28 @@ return [
             'buy' => 'Buy',
             'sell' => 'Sell',
         ],
+    ],
+
+    'connector' => [
+        'needed' => 'Needed on that PC',
+        'needed_items' => [
+            'Windows.',
+            'MetaTrader 5, logged in. Any account, broker, and server is fine.',
+            'Both files in the same folder: connect-mt5.py and start-mt5.bat.',
+        ],
+        'steps_title' => 'What to do',
+        'steps' => [
+            'Download connect-mt5.py and start-mt5.bat into the same folder. Keep these names.',
+            'Log in to MetaTrader 5 and leave it open.',
+            'Double-click start-mt5.bat. Do not type a python command.',
+            'Leave the black window open. snapshot sent means the rates are reaching this website.',
+        ],
+        'account' => 'A new account, broker, or server does not need new code. Log into that account in MetaTrader 5. This website follows the account that is open.',
+        'address' => 'These files already contain this website\'s address. Download them from this page. Do not make a new file by hand.',
+        'copy' => 'Copy code',
+        'download' => 'Download',
+        'copied' => 'Copied',
+        'missing' => 'The website token is missing, so this code cannot reach the site yet.',
     ],
 
     'logs' => [

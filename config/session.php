@@ -1,7 +1,5 @@
 <?php
 
-use Illuminate\Support\Str;
-
 return [
 
     /*
@@ -121,16 +119,13 @@ return [
     | Session Cookie Name
     |--------------------------------------------------------------------------
     |
-    | Here you may change the name of the session cookie that is created by
-    | the framework. Typically, you should not need to change this value
-    | since doing so does not grant a meaningful security improvement.
+    | agricart.pk publishes a cookie named agricart-session for every
+    | subdomain. This app must use a different name, or a successful login
+    | is forgotten on the next request.
     |
     */
 
-    'cookie' => env(
-        'SESSION_COOKIE',
-        Str::slug((string) env('APP_NAME', 'laravel')).'-session'
-    ),
+    'cookie' => env('SESSION_COOKIE', 'trade-agricart-session'),
 
     /*
     |--------------------------------------------------------------------------

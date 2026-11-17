@@ -30,6 +30,7 @@ from __future__ import annotations
 import json
 import os
 import queue
+import subprocess
 import threading
 import time
 import urllib.error
@@ -87,12 +88,55 @@ def authorized(header: str) -> bool:
     return mismatch == 0
 
 
+def terminal_process_running() -> bool:
+    """True only when the user already has the MT5 window open.
+
+    mt5.initialize() launches terminal64.exe when it is closed. A closed
+    live account must stay closed.
+    """
+    path = (os.environ.get("MT5_TERMINAL_PATH") or "").strip()
+    image = os.path.basename(path) or "terminal64.exe"
+
+    try:
+        completed = subprocess.run(
+            ["tasklist", "/FI", f"IMAGENAME eq {image}", "/NH"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+            creationflags=0x08000000,
+        )
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return False
+
+    listing = (completed.stdout or "").lower()
+
+    return image.lower() in listing and "no tasks are running" not in listing
+
+
 def ensure_terminal() -> bool:
     if mt5 is None:
         return False
 
-    path = os.environ.get("MT5_TERMINAL_PATH") or None
-    if not mt5.initialize(path):
+    try:
+        connected = mt5.terminal_info() is not None and mt5.account_info() is not None
+    except Exception:
+        connected = False
+
+    if connected:
+        return True
+
+    if not terminal_process_running():
+        try:
+            mt5.shutdown()
+        except Exception:
+            pass
+
+        return False
+
+    path = (os.environ.get("MT5_TERMINAL_PATH") or "").strip()
+    attached = mt5.initialize(path) if path else mt5.initialize()
+    if not attached:
         return False
 
     login = os.environ.get("MT5_LOGIN", "")
@@ -657,20 +701,26 @@ def bridge_loop() -> None:
                 continue
 
             now = time.time()
+            did_work = False
             if now >= next_quotes:
                 refresh_quotes()
                 next_quotes = time.time() + QUOTE_SECONDS
-                continue
+                did_work = True
 
+            now = time.time()
             if now >= next_ranges and REQUESTS.empty():
                 refresh_ranges()
                 next_ranges = time.time() + 1
-                continue
+                did_work = True
 
+            now = time.time()
             if now >= next_sync and REQUESTS.empty():
                 push_snapshot()
                 drain_pending()
                 next_sync = time.time() + POLL_SECONDS
+                did_work = True
+
+            if did_work:
                 continue
 
             timeout = max(0.005, min(next_quotes, next_sync) - time.time())
