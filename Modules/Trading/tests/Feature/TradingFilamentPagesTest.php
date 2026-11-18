@@ -4,6 +4,7 @@ namespace Modules\Trading\Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
@@ -29,12 +30,12 @@ class TradingFilamentPagesTest extends TestCase
                 'data' => [[
                     's' => 'OANDA:XAUUSD',
                     'd' => [
-                        22.4, 1.2, 0.4, 1920, 1910, 1890, 1920, 1880, 1900, 1900, 1910, 1920, 1890, 1880,
-                        55.0, 0.2, 0.8, 1900, 1895, 1905, 1910, 1890, 1900, 1900, 1910, 1920, 1890, 1880,
-                        74.2, 0.1, 0.9, 1900, 1915, 1885, 1930, 1870, 1900, 1900, 1910, 1920, 1890, 1880,
-                        48.0, 2.0, 2.0, 1900, 1900, 1900, 1902, 1898, 1900, 1900, 1910, 1920, 1890, 1880,
-                        31.0, -1.0, -0.2, 1900, 1880, 1920, 1940, 1860, 1900, 1900, 1910, 1920, 1890, 1880,
-                        66.0, 0.5, 0.1, 1900, 1920, 1880, 1950, 1850, 1900, 1900, 1910, 1920, 1890, 1880,
+                        22.4, 1.2, 0.4, 1920, 1910, 1890, 1920, 1880, 1900, 1920, 1880, 1900,
+                        55.0, 0.2, 0.8, 1900, 1895, 1905, 1910, 1890, 1900, 1920, 1880, 1900,
+                        74.2, 0.1, 0.9, 1900, 1915, 1885, 1930, 1870, 1900, 1920, 1880, 1900,
+                        48.0, 2.0, 2.0, 1900, 1900, 1900, 1902, 1898, 1900, 1920, 1880, 1900,
+                        31.0, -1.0, -0.2, 1900, 1880, 1920, 1940, 1860, 1900, 1920, 1880, 1900,
+                        66.0, 0.5, 0.1, 1900, 1920, 1880, 1950, 1850, 1900, 1920, 1880, 1900,
                     ],
                 ]],
             ]),
@@ -83,6 +84,15 @@ class TradingFilamentPagesTest extends TestCase
             ->assertSee('Moving Averages', false)
             ->assertSee('Bollinger Bands', false)
             ->assertSee('Pivot Points', false)
+            ->assertSee('wire:poll.60s.visible="refreshIndicators"', false)
+            ->assertSee('tv-live-rate', false)
+            ->assertSeeInOrder([
+                'Pivot, resistance, and support are calculated from the previous completed candle',
+                'tv-live-rate__symbol',
+                'XAUUSD',
+                'tv-live-rate__value',
+                '1900.00',
+            ], false)
             ->assertSee('Buying Area / Oversold', false)
             ->assertSee('Selling Area / Overbought', false)
             ->assertSee('Bullish', false)
@@ -94,7 +104,7 @@ class TradingFilamentPagesTest extends TestCase
             ->assertSee('>R1<', false)
             ->assertSee('>S2<', false)
             ->assertDontSee('>1m<', false)
-            ->assertDontSee('1Y', false)
+            ->assertDontSee('>1Y<', false)
             ->assertDontSee('Investing.com Market Summary & Signals', false)
             ->assertDontSee('Technical summary by', false)
             ->assertDontSee('by TradingView', false)
@@ -244,13 +254,16 @@ class TradingFilamentPagesTest extends TestCase
 
     public function test_selecting_a_sector_symbol_reloads_rsi_and_macd(): void
     {
+        Http::swap(new Factory);
+
         Http::fake(function ($request) {
             $ticker = $request->data()['symbols']['tickers'][0] ?? '';
             $rsi = $ticker === 'FX:EURUSD' ? 81.2 : 22.4;
-            $row = array_fill(0, 18, 50);
+            $row = array_fill(0, 72, 50);
             $row[0] = $rsi;
             $row[1] = $ticker === 'FX:EURUSD' ? 0.2 : 1.2;
             $row[2] = $ticker === 'FX:EURUSD' ? 0.8 : 0.4;
+            $row[39] = $ticker === 'FX:EURUSD' ? 1.105 : 1900.25;
 
             return Http::response([
                 'data' => [[
@@ -265,9 +278,12 @@ class TradingFilamentPagesTest extends TestCase
         Livewire::actingAs($user)
             ->test(TradingView::class)
             ->assertSee('Buying Area / Oversold')
+            ->assertSee('1900.25', false)
             ->set('symbol', 'FX:EURUSD')
             ->assertSee('Selling Area / Overbought')
-            ->assertSee('Bearish');
+            ->assertSee('Bearish')
+            ->assertSee('1.1050', false)
+            ->assertDontSee('1900.25', false);
 
         Http::assertSent(function ($request): bool {
             return ($request->data()['symbols']['tickers'][0] ?? null) === 'FX:EURUSD';

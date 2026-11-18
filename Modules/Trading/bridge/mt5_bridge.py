@@ -68,9 +68,48 @@ PUBLISH: queue.Queue = queue.Queue(1)
 QUOTES: dict[str, dict] = {}
 QUOTES_LOCK = threading.Lock()
 RANGES: dict[str, tuple[float, float]] = {}
+SPECS: dict[str, dict] = {}
+ACCOUNT: dict = {}
+CATALOG: dict = {"ok": True, "categories": [], "symbols": []}
+PENDING: list[dict] = []
+BOARDS: dict[str, dict] = {}
+CUSTOM: list[str] = []
 WATCHED: list[str] = []
 WATCHED_AT = 0.0
 SYMBOLS = [part.strip() for part in os.environ.get("MT5_SYMBOLS", "EURUSD,GBPUSD,USDJPY,XAUUSD").split(",") if part.strip()]
+WATCH_LIMIT = 10
+FRAMES = {
+    "1m": "TIMEFRAME_M1",
+    "5m": "TIMEFRAME_M5",
+    "15m": "TIMEFRAME_M15",
+    "30m": "TIMEFRAME_M30",
+    "1h": "TIMEFRAME_H1",
+    "4h": "TIMEFRAME_H4",
+    "d": "TIMEFRAME_D1",
+    "w": "TIMEFRAME_W1",
+}
+PENDING_TYPES = {
+    "buy_limit": "ORDER_TYPE_BUY_LIMIT",
+    "sell_limit": "ORDER_TYPE_SELL_LIMIT",
+    "buy_stop": "ORDER_TYPE_BUY_STOP",
+    "sell_stop": "ORDER_TYPE_SELL_STOP",
+}
+CATEGORY_NAMES = {
+    "forex": "Forex",
+    "metals": "Metals",
+    "metal": "Metals",
+    "crypto": "Crypto",
+    "cryptocurrencies": "Crypto",
+    "energies": "Commodities",
+    "energy": "Commodities",
+    "commodities": "Commodities",
+    "commodity": "Commodities",
+    "indices": "Indices",
+    "indexes": "Indices",
+    "index": "Indices",
+    "stocks": "Stocks",
+    "stock": "Stocks",
+}
 
 
 def authorized(header: str) -> bool:
@@ -270,6 +309,9 @@ def watched_symbols() -> list[str]:
 
 def active_symbols() -> list[str]:
     global WATCHED_AT
+    if CUSTOM:
+        return CUSTOM[:WATCH_LIMIT]
+
     now = time.time()
     if WATCHED and now - WATCHED_AT < 3:
         return WATCHED
@@ -280,6 +322,244 @@ def active_symbols() -> list[str]:
     WATCHED_AT = now
 
     return WATCHED
+
+
+def set_watchlist(payload: dict) -> dict:
+    global WATCHED_AT
+    requested = payload.get("symbols") if isinstance(payload, dict) else None
+    if not isinstance(requested, list):
+        return {"ok": False, "message": "Send a list of symbols."}
+
+    names: list[str] = []
+    for item in requested:
+        resolved = match_symbol(str(item))
+        if resolved and resolved not in names:
+            names.append(resolved)
+        if len(names) >= WATCH_LIMIT:
+            break
+
+    CUSTOM.clear()
+    CUSTOM.extend(names)
+    WATCHED.clear()
+    WATCHED_AT = 0.0
+
+    return {"ok": True, "symbols": names, "limit": WATCH_LIMIT}
+
+
+def category_name(info) -> str:
+    path = str(getattr(info, "path", "") or "")
+    parts = [part.strip() for part in path.replace("/", "\\").split("\\") if part.strip()]
+    head = parts[0] if parts else ""
+    mapped = CATEGORY_NAMES.get(head.lower())
+    if mapped:
+        return mapped
+    if head:
+        return head
+
+    name = str(getattr(info, "name", "") or "").upper()
+    if name.startswith(("XAU", "XAG", "XPT", "XPD")):
+        return "Metals"
+    if name.startswith(("BTC", "ETH", "LTC", "XRP")):
+        return "Crypto"
+    if name.startswith(("USOIL", "UKOIL", "XNG", "BRENT")):
+        return "Commodities"
+
+    return "Other"
+
+
+def spec_row(info) -> dict:
+    return {
+        "symbol": info.name,
+        "category": category_name(info),
+        "digits": info.digits,
+        "spread_points": info.spread,
+        "volume_min": info.volume_min,
+        "volume_max": info.volume_max,
+        "volume_step": info.volume_step,
+        "swap_long": info.swap_long,
+        "swap_short": info.swap_short,
+        "contract_size": info.trade_contract_size,
+        "tick_size": info.trade_tick_size or info.point,
+        "tick_value": info.trade_tick_value,
+        "point": info.point,
+    }
+
+
+def refresh_specs() -> None:
+    for symbol in active_symbols():
+        info = mt5.symbol_info(symbol)
+        if info is None:
+            continue
+        SPECS[symbol.upper()] = spec_row(info)
+
+
+def refresh_account() -> None:
+    info = mt5.account_info()
+    ACCOUNT.clear()
+    if info is None:
+        ACCOUNT.update({"ok": False, "message": "MT5 terminal is not connected."})
+        return
+
+    ACCOUNT.update({
+        "ok": True,
+        "login": info.login,
+        "balance": info.balance,
+        "equity": info.equity,
+        "margin": info.margin,
+        "margin_free": info.margin_free,
+        "margin_level": info.margin_level,
+        "leverage": info.leverage,
+        "currency": getattr(info, "currency", "") or "",
+        "company": getattr(info, "company", "") or "",
+        "server": getattr(info, "server", "") or "",
+        "name": getattr(info, "name", "") or "",
+        "profit": info.profit,
+    })
+
+
+def refresh_catalog() -> None:
+    discovered = mt5.symbols_get()
+    rows = []
+    if discovered is not None:
+        for info in discovered:
+            if info.trade_mode == mt5.SYMBOL_TRADE_MODE_DISABLED:
+                continue
+            rows.append({
+                "symbol": info.name,
+                "category": category_name(info),
+                "description": getattr(info, "description", "") or "",
+            })
+
+    categories = []
+    for row in rows:
+        if row["category"] not in categories:
+            categories.append(row["category"])
+
+    CATALOG.clear()
+    CATALOG.update({"ok": True, "categories": categories, "symbols": rows})
+
+
+def refresh_pending() -> None:
+    orders = mt5.orders_get()
+    if orders is None:
+        orders = []
+
+    labels = {
+        mt5.ORDER_TYPE_BUY_LIMIT: "buy_limit",
+        mt5.ORDER_TYPE_SELL_LIMIT: "sell_limit",
+        mt5.ORDER_TYPE_BUY_STOP: "buy_stop",
+        mt5.ORDER_TYPE_SELL_STOP: "sell_stop",
+        mt5.ORDER_TYPE_BUY_STOP_LIMIT: "buy_stop_limit",
+        mt5.ORDER_TYPE_SELL_STOP_LIMIT: "sell_stop_limit",
+    }
+    rows = []
+    for order in orders:
+        rows.append({
+            "ticket": order.ticket,
+            "symbol": order.symbol,
+            "type": labels.get(order.type, str(order.type)),
+            "lots": order.volume_current,
+            "price": order.price_open,
+            "sl": order.sl or None,
+            "tp": order.tp or None,
+        })
+
+    PENDING.clear()
+    PENDING.extend(rows)
+
+
+def board(payload: dict) -> dict:
+    category = str((payload or {}).get("category") or "")
+    cached = BOARDS.get(category)
+    if cached is not None and time.time() - float(cached.get("at") or 0) < 1:
+        return {"ok": True, "category": category, "quotes": cached["quotes"]}
+
+    if not CATALOG.get("symbols"):
+        refresh_catalog()
+
+    rows = []
+    for item in CATALOG.get("symbols", []):
+        if category and item["category"] != category:
+            continue
+        if len(rows) >= 40:
+            break
+        info = mt5.symbol_info(item["symbol"])
+        tick = mt5.symbol_info_tick(item["symbol"])
+        if info is None or tick is None or not tick.bid:
+            rows.append({"symbol": item["symbol"], "category": item["category"], "bid": None, "ask": None})
+            continue
+        spec = spec_row(info)
+        SPECS[item["symbol"].upper()] = spec
+        rows.append({
+            **spec,
+            "bid": tick.bid,
+            "ask": tick.ask,
+            "spread": round(tick.ask - tick.bid, info.digits),
+        })
+
+    BOARDS[category] = {"at": time.time(), "quotes": rows}
+
+    return {"ok": True, "category": category, "quotes": rows}
+
+
+def candle_rows(payload: dict) -> dict:
+    symbol = match_symbol(str((payload or {}).get("symbol") or ""))
+    frame = str((payload or {}).get("timeframe") or "").lower()
+    if symbol is None:
+        return {"ok": False, "message": "This symbol is not on the MT5 terminal."}
+    if frame not in FRAMES:
+        return {"ok": False, "message": "Choose 1m, 5m, 15m, 30m, 1h, 4h, D, or W."}
+
+    count = (payload or {}).get("count") or 80
+    try:
+        count = int(count)
+    except (TypeError, ValueError):
+        count = 80
+    count = min(200, max(10, count))
+    timeframe = getattr(mt5, FRAMES[frame])
+    rates = mt5.copy_rates_from_pos(symbol, timeframe, 0, count)
+    if rates is None:
+        return {"ok": False, "message": "MT5 did not return candles for this symbol."}
+
+    candles = []
+    for bar in rates:
+        candles.append({
+            "time": datetime.fromtimestamp(int(bar["time"])).isoformat(),
+            "open": float(bar["open"]),
+            "high": float(bar["high"]),
+            "low": float(bar["low"]),
+            "close": float(bar["close"]),
+        })
+
+    return {"ok": True, "symbol": symbol, "timeframe": frame, "candles": candles}
+
+
+def history_rows(payload: dict) -> dict:
+    try:
+        days = int((payload or {}).get("days") or 30)
+    except (TypeError, ValueError):
+        days = 30
+    days = min(365, max(1, days))
+    start = datetime.now() - timedelta(days=days)
+    deals = mt5.history_deals_get(start, datetime.now())
+    if deals is None:
+        deals = []
+
+    rows = []
+    for deal in deals:
+        if deal.entry not in (mt5.DEAL_ENTRY_OUT, mt5.DEAL_ENTRY_OUT_BY):
+            continue
+        rows.append({
+            "position_ticket": deal.position_id,
+            "symbol": deal.symbol,
+            "side": "buy" if deal.type == mt5.DEAL_TYPE_BUY else "sell",
+            "lots": deal.volume,
+            "price": deal.price,
+            "profit": deal.profit + deal.swap + deal.commission,
+            "time": datetime.fromtimestamp(deal.time).isoformat(),
+        })
+
+    return {"ok": True, "days": days, "deals": rows}
 
 
 def refresh_quotes() -> None:
@@ -301,12 +581,24 @@ def refresh_quotes() -> None:
             received = int(prior.get("received_ms") or now_ms)
 
         high, low = RANGES.get(key, (None, None))
+        spec = SPECS.get(key, {})
+        digits = int(spec.get("digits") or 5)
         rows[key] = {
             "symbol": symbol,
             "bid": tick.bid,
             "ask": tick.ask,
             "high": high,
             "low": low,
+            "spread": round(tick.ask - tick.bid, digits),
+            "category": spec.get("category"),
+            "volume_min": spec.get("volume_min"),
+            "volume_max": spec.get("volume_max"),
+            "volume_step": spec.get("volume_step"),
+            "swap_long": spec.get("swap_long"),
+            "swap_short": spec.get("swap_short"),
+            "contract_size": spec.get("contract_size"),
+            "tick_size": spec.get("tick_size"),
+            "tick_value": spec.get("tick_value"),
             "time_msc": stamp,
             "received_ms": received,
             "age_ms": max(0, now_ms - received),
@@ -541,7 +833,12 @@ def close_order(order: dict) -> dict:
         return {"ok": False, "message": "This symbol is not on the MT5 terminal."}
 
     ticket = int(order["ticket"])
-    volume, volume_error = prepare_volume(symbol, float(order["lots"]))
+    open_positions = mt5.positions_get(ticket=ticket)
+    position = open_positions[0] if open_positions else None
+    requested = float(order["lots"])
+    if position is not None and requested > float(position.volume):
+        requested = float(position.volume)
+    volume, volume_error = prepare_volume(symbol, requested)
     tick = mt5.symbol_info_tick(symbol)
     if volume is None or tick is None:
         return {"ok": False, "message": volume_error or "The position cannot be closed at the current price."}
@@ -573,7 +870,107 @@ def close_order(order: dict) -> dict:
         price = deal.price
         profit = deal.profit + deal.swap + deal.commission
 
-    return {"ok": True, "price": price, "profit": profit}
+    remaining = mt5.positions_get(ticket=ticket)
+    lots_left = float(remaining[0].volume) if remaining else 0.0
+
+    return {"ok": True, "price": price, "profit": profit, "lots_left": lots_left}
+
+
+def place_pending(order: dict) -> dict:
+    symbol = match_symbol(str(order.get("symbol") or ""))
+    kind = str(order.get("type") or "")
+    if symbol is None:
+        return {"ok": False, "message": "This symbol is not on the MT5 terminal."}
+    if kind not in PENDING_TYPES:
+        return {"ok": False, "message": "Choose a buy or sell limit or stop."}
+
+    volume, volume_error = prepare_volume(symbol, float(order.get("lots") or 0))
+    if volume is None:
+        return {"ok": False, "message": volume_error}
+
+    info = mt5.symbol_info(symbol)
+    digits = 5 if info is None else info.digits
+    try:
+        price = round(float(order.get("price")), digits)
+    except (TypeError, ValueError):
+        return {"ok": False, "message": "Enter the pending order price."}
+    if price <= 0:
+        return {"ok": False, "message": "Enter the pending order price."}
+
+    stop_loss = round(float(order["sl"]), digits) if order.get("sl") else 0.0
+    take_profit = round(float(order["tp"]), digits) if order.get("tp") else 0.0
+    request = {
+        "action": mt5.TRADE_ACTION_PENDING,
+        "symbol": symbol,
+        "volume": volume,
+        "type": getattr(mt5, PENDING_TYPES[kind]),
+        "price": price,
+        "sl": stop_loss,
+        "tp": take_profit,
+        "deviation": 20,
+        "magic": MAGIC,
+        "comment": "web-pending",
+        "type_time": mt5.ORDER_TIME_GTC,
+        "type_filling": filling_mode(symbol),
+    }
+    result = mt5.order_send(request)
+    if result is None or result.retcode not in (mt5.TRADE_RETCODE_DONE, mt5.TRADE_RETCODE_PLACED):
+        comment = "" if result is None else result.comment
+        return {"ok": False, "message": comment or "MT5 did not place the pending order."}
+
+    refresh_pending()
+
+    return {"ok": True, "ticket": result.order, "price": price}
+
+
+def cancel_pending(order: dict) -> dict:
+    try:
+        ticket = int(order.get("ticket"))
+    except (TypeError, ValueError):
+        return {"ok": False, "message": "That pending order has no ticket."}
+
+    request = {
+        "action": mt5.TRADE_ACTION_REMOVE,
+        "order": ticket,
+    }
+    result = mt5.order_send(request)
+    if result is None or result.retcode != mt5.TRADE_RETCODE_DONE:
+        comment = "" if result is None else result.comment
+        return {"ok": False, "message": comment or "MT5 did not cancel the pending order."}
+
+    refresh_pending()
+
+    return {"ok": True, "ticket": ticket}
+
+
+def modify_position(order: dict) -> dict:
+    try:
+        ticket = int(order.get("ticket"))
+    except (TypeError, ValueError):
+        return {"ok": False, "message": "That position has no ticket."}
+
+    found = mt5.positions_get(ticket=ticket)
+    if not found:
+        return {"ok": False, "message": "That position is not open."}
+
+    position = found[0]
+    info = mt5.symbol_info(position.symbol)
+    digits = 5 if info is None else info.digits
+    stop_loss = round(float(order["sl"]), digits) if order.get("sl") else 0.0
+    take_profit = round(float(order["tp"]), digits) if order.get("tp") else 0.0
+    request = {
+        "action": mt5.TRADE_ACTION_SLTP,
+        "symbol": position.symbol,
+        "position": ticket,
+        "sl": stop_loss,
+        "tp": take_profit,
+    }
+    result = mt5.order_send(request)
+    if result is None or result.retcode != mt5.TRADE_RETCODE_DONE:
+        comment = "" if result is None else result.comment
+        return {"ok": False, "message": comment or "MT5 did not change the stop or target."}
+
+    return {"ok": True, "ticket": ticket, "stop_loss": stop_loss or None, "take_profit": take_profit or None}
 
 
 def laravel_json(method: str, path: str, payload: dict | None = None) -> dict:
@@ -674,6 +1071,44 @@ def dispatch_job(job: dict) -> None:
         job["reply"].put((200, close_order(job["order"])))
         return
 
+    if job["kind"] == "watchlist":
+        job["reply"].put((200, set_watchlist(job["order"] or {})))
+        return
+
+    if job["kind"] == "pending":
+        job["reply"].put((200, place_pending(job["order"] or {})))
+        return
+
+    if job["kind"] == "cancel":
+        job["reply"].put((200, cancel_pending(job["order"] or {})))
+        return
+
+    if job["kind"] == "modify":
+        job["reply"].put((200, modify_position(job["order"] or {})))
+        return
+
+    if job["kind"] == "rates":
+        job["reply"].put((200, candle_rows(job["order"] or {})))
+        return
+
+    if job["kind"] == "history":
+        job["reply"].put((200, history_rows(job["order"] or {})))
+        return
+
+    if job["kind"] == "board":
+        job["reply"].put((200, board(job["order"] or {})))
+        return
+
+    if job["kind"] == "catalog":
+        refresh_catalog()
+        job["reply"].put((200, dict(CATALOG)))
+        return
+
+    if job["kind"] == "account":
+        refresh_account()
+        job["reply"].put((200, dict(ACCOUNT)))
+        return
+
     job["reply"].put((404, {"ok": False, "message": "Not found."}))
 
 
@@ -715,6 +1150,11 @@ def bridge_loop() -> None:
 
             now = time.time()
             if now >= next_sync and REQUESTS.empty():
+                refresh_account()
+                refresh_specs()
+                refresh_pending()
+                if not CATALOG.get("symbols"):
+                    refresh_catalog()
                 push_snapshot()
                 drain_pending()
                 next_sync = time.time() + POLL_SECONDS
@@ -750,17 +1190,39 @@ class BridgeHandler(BaseHTTPRequestHandler):
         self.respond(204, {})
 
     def do_GET(self) -> None:  # noqa: N802
-        path = self.path.split("?", 1)[0]
+        parsed = urllib.parse.urlsplit(self.path)
+        path = parsed.path
+        query = {key: values[-1] for key, values in urllib.parse.parse_qs(parsed.query).items()}
         if path == "/quotes":
             self.respond(200, quote_payload())
             return
 
-        if path != "/health":
+        if path == "/account" and ACCOUNT.get("ok"):
+            self.respond(200, dict(ACCOUNT))
+            return
+
+        if path == "/symbols" and CATALOG.get("symbols"):
+            self.respond(200, dict(CATALOG))
+            return
+
+        if path == "/pending":
+            self.respond(200, {"ok": True, "orders": list(PENDING)})
+            return
+
+        kind = {
+            "/health": "health",
+            "/account": "account",
+            "/symbols": "catalog",
+            "/board": "board",
+            "/rates": "rates",
+            "/history": "history",
+        }.get(path)
+        if kind is None:
             self.respond(404, {"ok": False, "message": "Not found."})
             return
 
         try:
-            status, payload = submit("health")
+            status, payload = submit(kind, query or None)
         except queue.Empty:
             self.respond(503, {"ok": False, "message": "MT5 terminal is not connected."})
             return
@@ -785,6 +1247,14 @@ class BridgeHandler(BaseHTTPRequestHandler):
                 status, payload = submit("order", order)
             elif self.path == "/orders/close":
                 status, payload = submit("close", order)
+            elif self.path == "/orders/pending":
+                status, payload = submit("pending", order)
+            elif self.path == "/orders/cancel":
+                status, payload = submit("cancel", order)
+            elif self.path == "/orders/modify":
+                status, payload = submit("modify", order)
+            elif self.path == "/watchlist":
+                status, payload = submit("watchlist", order)
             elif self.path == "/session":
                 status, payload = submit("login", order)
             else:

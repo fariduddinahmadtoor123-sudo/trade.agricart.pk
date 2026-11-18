@@ -64,7 +64,7 @@ return [
         'macd' => 'A positive MACD histogram indicates bullish momentum, while a negative histogram shows bearish pressure.',
         'ma' => 'EMA 50 above EMA 200 shows bullish alignment; below it shows a bearish trend.',
         'bollinger' => 'A narrow band width marks a squeeze, while a wide band marks expanded volatility.',
-        'pivot' => 'Pivot Point, resistance, and support mark the key reversal levels for each timeframe.',
+        'pivot' => 'Pivot, resistance, and support are calculated from the previous completed candle, so each timeframe updates when that candle closes.',
     ],
 
     'rsi' => [
@@ -112,6 +112,7 @@ return [
         'unsupported' => 'This symbol is currently not supported or unavailable.',
         'investing_summary' => 'Investing.com :frame summary',
         'data_unavailable' => 'Data not available',
+        'live_price' => 'Live',
     ],
 
     'page_info' => [
@@ -156,6 +157,8 @@ return [
         'mt5_login' => 'Account number',
         'mt5_password' => 'Password',
         'mt5_server' => 'Server',
+        'show_password' => 'Show password',
+        'remember_login' => 'Remember',
         'mt5_connect' => 'Connect',
         'mt5_disconnect' => 'Disconnect',
         'mt5_connected' => 'Connected to :login',
@@ -175,6 +178,48 @@ return [
         'fixed_risk' => 'Every order places a stop and a target at 1% of equity.',
         'quote_waiting' => 'Waiting for the live tick.',
         'quote_offline' => 'The live tick stream is not answering.',
+        'margin' => 'Used margin',
+        'margin_free' => 'Free margin',
+        'leverage' => 'Leverage',
+        'currency' => 'Currency',
+        'broker' => 'Broker',
+        'categories' => 'Categories',
+        'watch_limit_note' => 'Add up to 10 symbols. The live grid follows this list.',
+        'spread' => 'Spread',
+        'lot_limits' => 'Lots min–max / step',
+        'swap' => 'Swap long / short',
+        'contract' => 'Contract',
+        'add_symbol' => 'Add',
+        'watchlist_empty' => 'No custom symbols yet. Open a category and add up to 10.',
+        'watch_limit' => 'The watchlist already has 10 symbols. Remove one first.',
+        'stop_points' => 'Stop distance (points)',
+        'size_lot' => 'Size the lot',
+        'lot_sized' => 'Lot size set to :lots from the broker contract.',
+        'lot_unavailable' => 'The broker did not send the contract size for that symbol yet.',
+        'candles' => 'Candles',
+        'candles_empty' => 'Click a symbol in Market Watch.',
+        'candles_missing' => 'No candles came back for this symbol.',
+        'open' => 'Open',
+        'close_price' => 'Close',
+        'pending' => 'Pending orders',
+        'buy_limit' => 'Buy limit',
+        'sell_limit' => 'Sell limit',
+        'buy_stop' => 'Buy stop',
+        'sell_stop' => 'Sell stop',
+        'price' => 'Price',
+        'place_pending' => 'Place pending',
+        'pending_invalid' => 'Enter a symbol, lot, and price for the pending order.',
+        'pending_placed' => 'Pending order :ticket is working.',
+        'pending_cancelled' => 'Pending order cancelled.',
+        'cancel' => 'Cancel',
+        'no_pending' => 'No pending orders.',
+        'save_protection' => 'Save SL/TP',
+        'protection_saved' => 'Stop and target were sent to MT5.',
+        'partial' => 'Partial close',
+        'partial_lots' => 'Enter a lot size smaller than the open position.',
+        'partial_closed' => 'Position reduced. :lots lots remain.',
+        'history_days' => 'Days of history',
+        'load_history' => 'Load older deals',
         'ticket' => 'Order',
         'ticket_no' => 'Ticket',
         'symbol' => 'Symbol',
@@ -544,7 +589,7 @@ Volatility state and price location between the lower and upper bands.
 • The meter shows where price sits between Lower, Mid, and Upper
 
 8) Pivot Points
-Classic pivot reference levels for each timeframe: R2, R1, Pivot Point (PP), S1, and S2. Traders use these as support, resistance, and potential reversal checkpoints.
+Classic pivot levels for each timeframe: R2, R1, Pivot Point (PP), S1, and S2, calculated from that timeframe's previous completed candle. They update when the candle closes: 30M every half hour, 1H every hour, 4H every four hours, and 1D, 1W, and 1M on their own close. The page refreshes these levels about once a minute while it is open.
 
 9) Language and layout
 Use EN | اردو in the header. English is left-to-right. Urdu switches the admin panel to right-to-left and translates the AgriCart labels on this page.

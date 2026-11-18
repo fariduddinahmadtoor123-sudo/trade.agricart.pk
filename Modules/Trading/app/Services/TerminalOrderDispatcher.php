@@ -220,9 +220,43 @@ class TerminalOrderDispatcher
         return $this->finishClose($order);
     }
 
-    private function finishClose(TerminalOrder $order): TerminalOrderResult
+    public function partialCloseLive(Mt5Account $account, int $orderId, string $lots): TerminalOrderResult
     {
-        $execution = $this->bridge->close($order);
+        $order = TerminalOrder::query()
+            ->whereKey($orderId)
+            ->where('mt5_account_id', $account->id)
+            ->where('status', TerminalOrderStatus::Open)
+            ->first();
+
+        if ($order === null) {
+            return $this->reject(__('trading.terminal.missing_order'));
+        }
+
+        if (! is_numeric($lots) || (float) $lots <= 0 || (float) $lots >= (float) $order->lots) {
+            return $this->reject(__('trading.terminal.partial_lots'));
+        }
+
+        $order->setRelation('liveAccount', $account);
+
+        return $this->finishClose($order, (float) $lots);
+    }
+
+    private function finishClose(TerminalOrder $order, ?float $lots = null): TerminalOrderResult
+    {
+        $execution = $this->bridge->close($order, $lots);
+
+        if ($execution->isFilled() && $execution->price !== null && $execution->lotsLeft !== null && $execution->lotsLeft > 0) {
+            $order->fill([
+                'lots' => $execution->lotsLeft,
+                'bridge_message' => null,
+            ])->save();
+
+            return new TerminalOrderResult(true, $order->refresh(), [
+                __('trading.terminal.partial_closed', [
+                    'lots' => number_format($execution->lotsLeft, 2, '.', ''),
+                ]),
+            ], PropRiskVerdict::Allow);
+        }
 
         if ($execution->isFilled() && $execution->price !== null) {
             $profit = $execution->profit ?? $this->fallbackProfit($order, $execution->price);

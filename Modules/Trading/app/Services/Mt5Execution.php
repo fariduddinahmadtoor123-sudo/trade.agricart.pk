@@ -12,6 +12,7 @@ readonly class Mt5Execution
         public string $message = '',
         public ?float $stopLoss = null,
         public ?float $takeProfit = null,
+        public ?float $lotsLeft = null,
     ) {}
 
     public static function filled(int $ticket, float $price, ?float $profit = null, ?float $stopLoss = null, ?float $takeProfit = null): self
@@ -19,9 +20,9 @@ readonly class Mt5Execution
         return new self('filled', $ticket, $price, $profit, stopLoss: $stopLoss, takeProfit: $takeProfit);
     }
 
-    public static function closed(float $price, float $profit): self
+    public static function closed(float $price, float $profit, ?float $lotsLeft = null): self
     {
-        return new self('filled', null, $price, $profit);
+        return new self('filled', null, $price, $profit, lotsLeft: $lotsLeft);
     }
 
     public static function rejected(string $message): self

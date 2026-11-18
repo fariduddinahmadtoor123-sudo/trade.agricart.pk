@@ -21,7 +21,7 @@ class LocaleTest extends TestCase
             'scanner.tradingview.com/*' => Http::response([
                 'data' => [[
                     's' => 'OANDA:XAUUSD',
-                    'd' => array_fill(0, 84, 22),
+                    'd' => array_fill(0, 72, 22),
                 ]],
             ]),
         ]);

@@ -15,6 +15,7 @@ use Modules\Trading\Models\Mt5Account;
 use Modules\Trading\Models\PropAccount;
 use Modules\Trading\Models\TerminalOrder;
 use Modules\Trading\Models\TradingLog;
+use Modules\Trading\Services\Mt5AccountSession;
 use Tests\TestCase;
 
 class Mt5LiveAccountTest extends TestCase
@@ -187,6 +188,77 @@ class Mt5LiveAccountTest extends TestCase
         $this->assertNotNull($account);
         $this->assertSame('MetaQuotes-Demo', $account->server);
         $this->assertNotSame('secret-pass', $account->getRawOriginal('password'));
+    }
+
+    public function test_remember_me_keeps_the_password_after_connect(): void
+    {
+        $user = User::factory()->create();
+
+        Http::preventStrayRequests();
+        Http::fake([
+            'http://127.0.0.1:8765/session' => Http::response([
+                'ok' => true,
+                'login' => 252912077,
+                'balance' => 20.13,
+                'equity' => 20.13,
+                'server' => 'MetaQuotes-Demo',
+                'name' => 'Farid',
+                'company' => 'MetaQuotes',
+            ], 200),
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(Mt5Terminal::class)
+            ->set('mt5Login', '252912077')
+            ->set('mt5Password', 'secret-pass')
+            ->set('mt5Server', 'MetaQuotes-Demo')
+            ->set('rememberMt5', true)
+            ->call('connectMt5')
+            ->assertSet('mt5Password', 'secret-pass')
+            ->assertSet('mt5Login', '252912077')
+            ->assertSet('mt5Server', 'MetaQuotes-Demo');
+    }
+
+    public function test_remember_me_restores_the_saved_login_on_the_next_visit(): void
+    {
+        $user = User::factory()->create();
+        $account = Mt5Account::factory()->create([
+            'login' => '252912077',
+            'password' => 'secret-pass',
+            'server' => 'Exness-MT5Real33',
+        ]);
+
+        session([
+            Mt5AccountSession::KEY => $account->id,
+            'trading.terminal.remember_mt5' => true,
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(Mt5Terminal::class)
+            ->assertSet('rememberMt5', true)
+            ->assertSet('mt5Password', 'secret-pass')
+            ->assertSet('mt5Login', '252912077')
+            ->assertSet('mt5Server', 'Exness-MT5Real33');
+    }
+
+    public function test_turning_remember_me_off_clears_the_password_field(): void
+    {
+        $user = User::factory()->create();
+        $account = Mt5Account::factory()->create([
+            'login' => '252912077',
+            'password' => 'secret-pass',
+            'server' => 'Exness-MT5Real33',
+        ]);
+
+        session([
+            Mt5AccountSession::KEY => $account->id,
+            'trading.terminal.remember_mt5' => true,
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(Mt5Terminal::class)
+            ->set('rememberMt5', false)
+            ->assertSet('mt5Password', '');
     }
 
     public function test_an_order_is_refused_when_the_bridge_token_is_missing(): void

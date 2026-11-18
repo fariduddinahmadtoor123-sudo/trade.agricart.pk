@@ -140,53 +140,118 @@
     @php($desk = $this->desk())
     @php($live = $this->liveAccount())
 
-    <section class="term-desk" wire:poll.2s aria-label="{{ __('trading.nav.mt5_terminal') }}">
-        <form class="term-desk__connect" wire:submit="connectMt5">
-            <label>
-                <span>{{ __('trading.terminal.mt5_login') }}</span>
-                <input wire:model="mt5Login" inputmode="numeric" autocomplete="off" required>
-            </label>
-            <label>
-                <span>{{ __('trading.terminal.mt5_password') }}</span>
-                <input type="password" wire:model="mt5Password" autocomplete="new-password">
-            </label>
-            <label>
-                <span>{{ __('trading.terminal.mt5_server') }}</span>
-                <input wire:model="mt5Server" autocomplete="off">
-            </label>
-            <div class="term-desk__connect-actions">
-                <button type="submit">{{ __('trading.terminal.mt5_connect') }}</button>
-                @if ($live)
-                    <button type="button" wire:click="disconnectMt5">{{ __('trading.terminal.mt5_disconnect') }}</button>
-                @endif
+    <div
+        class="term-window"
+        x-data="{ open: true, maximized: false }"
+        x-bind:class="{ 'is-max': open && maximized, 'is-min': ! open }"
+    >
+        <header class="term-window__bar">
+            <strong class="term-window__title">{{ __('trading.nav.mt5_terminal') }}</strong>
+            <div class="term-window__controls">
+                <button type="button" class="term-window__btn" x-show="open" x-on:click="open = false; maximized = false" aria-label="{{ __('trading.page_info.minimize') }}" title="{{ __('trading.page_info.minimize') }}">–</button>
+                <button type="button" class="term-window__btn" x-on:click="open ? maximized = !maximized : open = true" x-bind:aria-label="maximized ? '{{ __('trading.page_info.restore') }}' : '{{ __('trading.page_info.maximize') }}'" x-bind:title="maximized ? '{{ __('trading.page_info.restore') }}' : '{{ __('trading.page_info.maximize') }}'">
+                    <span x-show="!maximized">□</span>
+                    <span x-show="maximized" x-cloak>❐</span>
+                </button>
             </div>
-        </form>
-        @if ($mt5Status)
-            <p class="term-desk__note">{{ $mt5Status }}</p>
-        @endif
-        <header class="term-desk__summary">
-            <p class="term-desk__eyebrow">{{ __('trading.terminal.summary') }}</p>
-            @if ($desk['summary'])
-                <dl class="term-desk__stats">
-                    <div>
-                        <dt>{{ __('trading.terminal.balance') }}</dt>
-                        <dd>{{ $desk['summary']['balance'] }}</dd>
-                    </div>
-                    <div>
-                        <dt>{{ __('trading.terminal.equity') }}</dt>
-                        <dd>{{ $desk['summary']['equity'] }}</dd>
-                    </div>
-                    <div>
-                        <dt>{{ __('trading.terminal.today_pnl') }}</dt>
-                        <dd class="term-desk__pnl term-desk__pnl--{{ $desk['summary']['today_tone'] }}">{{ $desk['summary']['today'] }}</dd>
-                    </div>
-                </dl>
-            @elseif ($desk['session'])
-                <p class="term-desk__empty">{{ __('trading.terminal.waiting_account') }}</p>
-            @else
-                <p class="term-desk__empty">{{ __('trading.terminal.need_session') }}</p>
-            @endif
         </header>
+    <section class="term-desk" wire:poll.2s x-show="open" aria-label="{{ __('trading.nav.mt5_terminal') }}">
+        @php($strip = $this->accountStrip())
+        <div class="term-desk__line">
+            <form class="term-desk__connect" wire:submit="connectMt5">
+                <label>
+                    <span>{{ __('trading.terminal.mt5_login') }}</span>
+                    <input class="term-desk__login" wire:model="mt5Login" inputmode="numeric" autocomplete="username" required>
+                </label>
+                <label>
+                    <span>{{ __('trading.terminal.mt5_password') }}</span>
+                    <span class="term-desk__secret">
+                        <input class="term-desk__password" type="password" data-mt5-password wire:model="mt5Password" autocomplete="current-password">
+                        <button type="button" class="term-desk__eye" data-password-toggle aria-label="{{ __('trading.terminal.show_password') }}" title="{{ __('trading.terminal.show_password') }}">◉</button>
+                    </span>
+                </label>
+                <label>
+                    <span>{{ __('trading.terminal.mt5_server') }}</span>
+                    <input wire:model="mt5Server" autocomplete="off">
+                </label>
+                <label class="term-desk__remember">
+                    <input type="checkbox" wire:model.live="rememberMt5">
+                    <span>{{ __('trading.terminal.remember_login') }}</span>
+                </label>
+                <div class="term-desk__connect-actions">
+                    <button type="submit">{{ __('trading.terminal.mt5_connect') }}</button>
+                    @if ($live)
+                        <button type="button" wire:click="disconnectMt5">{{ __('trading.terminal.mt5_disconnect') }}</button>
+                    @endif
+                </div>
+            </form>
+            @if ($mt5Status)
+                <p class="term-desk__note term-desk__status">{{ $mt5Status }}</p>
+            @endif
+            @if (! $desk['summary'] && $desk['session'])
+                <p class="term-desk__empty term-desk__status">{{ __('trading.terminal.waiting_account') }}</p>
+            @elseif (! $desk['summary'])
+                <p class="term-desk__empty term-desk__status">{{ __('trading.terminal.need_session') }}</p>
+            @endif
+            <dl class="term-desk__stats" data-term-account>
+                <div>
+                    <dt>{{ __('trading.terminal.leverage') }}</dt>
+                    <dd data-account="leverage">{{ isset($strip['leverage']) ? '1:'.$strip['leverage'] : '—' }}</dd>
+                </div>
+                <div>
+                    <dt>{{ __('trading.terminal.currency') }}</dt>
+                    <dd data-account="currency">{{ $strip['currency'] ?? '—' }}</dd>
+                </div>
+                <div>
+                    <dt>{{ __('trading.terminal.broker') }}</dt>
+                    <dd data-account="company">{{ $strip['company'] ?? '—' }}</dd>
+                </div>
+            </dl>
+        </div>
+        <script>
+            (() => {
+                if (window.agricartPasswordToggle) {
+                    return;
+                }
+
+                window.agricartPasswordToggle = true;
+                window.agricartShowMt5Password = false;
+
+                const applyPasswordVisibility = () => {
+                    const input = document.querySelector('[data-mt5-password]');
+
+                    if (!input) {
+                        return;
+                    }
+
+                    input.type = window.agricartShowMt5Password ? 'text' : 'password';
+                };
+
+                document.addEventListener('click', (event) => {
+                    const button = event.target.closest('[data-password-toggle]');
+
+                    if (!button) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    window.agricartShowMt5Password = !window.agricartShowMt5Password;
+                    applyPasswordVisibility();
+                });
+
+                const watchMorph = () => {
+                    if (!window.Livewire || window.agricartPasswordMorph) {
+                        return;
+                    }
+
+                    window.agricartPasswordMorph = true;
+                    Livewire.hook('morph.updated', applyPasswordVisibility);
+                };
+
+                document.addEventListener('livewire:init', watchMorph);
+                watchMorph();
+            })();
+        </script>
 
         <div class="term-desk__body">
             <section class="term-desk__watch">
@@ -197,11 +262,14 @@
                         <span>{{ __('trading.terminal.double_click') }}</span>
                     </label>
                 </div>
-                <p class="term-desk__note" data-term-note>{{ __('trading.terminal.fixed_risk') }}</p>
-                @if ($desk['quotes'] === [])
+                <p class="term-desk__note" data-term-note></p>
+                @php($watch = $this->watchRows($desk['quotes']))
+                <div class="term-desk__stage">
+                    <div class="term-desk__quotes">
+                @if ($watch === [])
                     <p class="term-desk__empty">{{ __('trading.terminal.watch_empty') }}</p>
                 @else
-                    <div class="term-desk__table">
+                    <div class="term-desk__table term-desk__table--fit">
                         <table class="term-grid" data-term-quotes>
                             <thead>
                                 <tr>
@@ -209,23 +277,23 @@
                                     <th>{{ __('trading.terminal.symbol') }}</th>
                                     <th>{{ __('trading.terminal.bid') }}</th>
                                     <th>{{ __('trading.terminal.ask') }}</th>
+                                    <th>{{ __('trading.terminal.spread') }}</th>
                                     <th>{{ __('trading.terminal.day_high') }}</th>
                                     <th>{{ __('trading.terminal.day_low') }}</th>
-                                    <th>{{ __('trading.terminal.time') }}</th>
                                     <th>{{ __('trading.terminal.lots') }}</th>
                                     <th>{{ __('trading.terminal.buy') }} / {{ __('trading.terminal.sell') }}</th>
                                 </tr>
                             </thead>
                             <tbody wire:ignore>
-                                @foreach ($desk['quotes'] as $index => $quote)
+                                @foreach ($watch as $index => $quote)
                                     <tr data-symbol="{{ $quote['symbol'] }}" wire:key="watch-{{ $quote['symbol'] }}">
                                         <td>{{ $index + 1 }}</td>
-                                        <td>{{ $quote['symbol'] }}</td>
+                                        <td class="term-desk__symbol" data-chart-symbol="{{ $quote['symbol'] }}">{{ $quote['symbol'] }}</td>
                                         <td data-bid>{{ $quote['bid'] }}</td>
                                         <td data-ask>{{ $quote['ask'] }}</td>
+                                        <td data-spread>—</td>
                                         <td data-high>—</td>
                                         <td data-low>—</td>
-                                        <td data-stamp>—</td>
                                         <td><input data-lots type="number" value="0.01" min="0.01" max="500" step="0.01"></td>
                                         <td class="term-grid__trade">
                                             <button type="button" class="term-desk__buy" data-trade="buy" data-symbol="{{ $quote['symbol'] }}">{{ __('trading.terminal.buy') }}</button>
@@ -252,13 +320,6 @@
                                 return number.toFixed(Math.abs(number) >= 50 ? 2 : 5);
                             };
 
-                            const clock = (ms) => {
-                                const date = new Date(ms);
-                                const pad = (value, width = 2) => String(value).padStart(width, '0');
-
-                                return pad(date.getHours()) + ':' + pad(date.getMinutes()) + ':' + pad(date.getSeconds()) + '.' + pad(date.getMilliseconds(), 3);
-                            };
-
                             const paint = (quote) => {
                                 const symbol = String(quote.symbol || '').toUpperCase();
                                 const row = document.querySelector(`[data-term-quotes] [data-symbol="${symbol}"]`);
@@ -270,7 +331,6 @@
                                 const ask = row.querySelector('[data-ask]');
                                 const high = row.querySelector('[data-high]');
                                 const low = row.querySelector('[data-low]');
-                                const stamp = row.querySelector('[data-stamp]');
                                 const nextBid = price(quote.bid);
                                 if (bid && bid.textContent !== nextBid) {
                                     const previous = Number(bid.dataset.last || quote.bid);
@@ -287,10 +347,38 @@
                                 if (low) {
                                     low.textContent = price(quote.low);
                                 }
-                                if (stamp) {
-                                    stamp.textContent = clock(quote.time_msc) + ' · ' + quote.age_ms + 'ms';
+                                const spread = row.querySelector('[data-spread]');
+                                if (spread && quote.spread != null) {
+                                    spread.textContent = quote.spread;
                                 }
-                                row.classList.toggle('is-stale', Math.abs(Number(quote.age_ms)) > 1500);
+                                row.dataset.tickSize = quote.tick_size || '';
+                                row.dataset.tickValue = quote.tick_value || '';
+                                row.dataset.step = quote.volume_step || '';
+                                row.dataset.min = quote.volume_min || '';
+                                row.dataset.max = quote.volume_max || '';
+                            };
+
+                            const pullAccount = async () => {
+                                try {
+                                    const response = await fetch('http://127.0.0.1:8765/account', { cache: 'no-store' });
+                                    const body = await response.json();
+                                    window.agricartAccount = body;
+                                    if (body.ok !== true) {
+                                        return;
+                                    }
+                                    const write = (key, value) => {
+                                        const node = document.querySelector(`[data-account="${key}"]`);
+                                        if (node) {
+                                            node.textContent = value;
+                                        }
+                                    };
+                                    write('margin', body.margin);
+                                    write('free', body.margin_free);
+                                    write('leverage', body.leverage ? `1:${body.leverage}` : '—');
+                                    write('currency', body.currency || '—');
+                                    write('company', body.company || '—');
+                                } catch (error) {
+                                }
                             };
 
                             const rememberClickMode = () => {
@@ -340,6 +428,26 @@
                                 component.call('placeQuote', button.dataset.symbol, button.dataset.trade, lots);
                             };
 
+                            document.addEventListener('click', (event) => {
+                                const cell = event.target instanceof Element ? event.target.closest('[data-chart-symbol]') : null;
+                                if (!cell) {
+                                    return;
+                                }
+                                const symbol = cell.dataset.chartSymbol || '';
+                                if (symbol === '') {
+                                    return;
+                                }
+                                const wanted = symbol.toUpperCase();
+                                document.querySelectorAll('[data-term-quotes] tr[data-symbol]').forEach((row) => {
+                                    row.classList.toggle('is-selected', (row.dataset.symbol || '').toUpperCase() === wanted);
+                                });
+                                const root = cell.closest('[wire\\:id]');
+                                const component = root ? Livewire.find(root.getAttribute('wire:id')) : null;
+                                if (component) {
+                                    component.call('selectChart', symbol);
+                                }
+                            });
+
                             const pull = async () => {
                                 rememberClickMode();
                                 try {
@@ -355,10 +463,116 @@
                             };
 
                             pull();
+                            pullAccount();
                             setInterval(pull, 50);
+                            setInterval(pullAccount, 1000);
                         })();
                     </script>
                 @endif
+                    </div>
+                    <aside class="term-desk__pending" aria-label="{{ __('trading.terminal.pending') }}">
+                        <div class="term-desk__pending-scroll">
+                            <h3>{{ __('trading.terminal.pending') }}</h3>
+                            <form class="term-desk__pending-form" wire:submit="placePendingOrder">
+                                <label>
+                                    <span>{{ __('trading.terminal.symbol') }}</span>
+                                    <input wire:model="pendingSymbol">
+                                </label>
+                                <label>
+                                    <span>{{ __('trading.terminal.side') }}</span>
+                                    <select wire:model="pendingType">
+                                        <option value="buy_limit">{{ __('trading.terminal.buy_limit') }}</option>
+                                        <option value="sell_limit">{{ __('trading.terminal.sell_limit') }}</option>
+                                        <option value="buy_stop">{{ __('trading.terminal.buy_stop') }}</option>
+                                        <option value="sell_stop">{{ __('trading.terminal.sell_stop') }}</option>
+                                    </select>
+                                </label>
+                                <label>
+                                    <span>{{ __('trading.terminal.lots') }}</span>
+                                    <input wire:model="pendingLots" inputmode="decimal">
+                                </label>
+                                <label>
+                                    <span>{{ __('trading.terminal.price') }}</span>
+                                    <input wire:model="pendingPrice" inputmode="decimal">
+                                </label>
+                                <label>
+                                    <span>{{ __('trading.terminal.stop_loss') }}</span>
+                                    <input wire:model="pendingStop" inputmode="decimal">
+                                </label>
+                                <label>
+                                    <span>{{ __('trading.terminal.take_profit') }}</span>
+                                    <input wire:model="pendingTake" inputmode="decimal">
+                                </label>
+                                <button type="submit">{{ __('trading.terminal.place_pending') }}</button>
+                            </form>
+                            <ul class="term-desk__pending-list">
+                                @forelse ($this->pendingOrders() as $order)
+                                    <li wire:key="pending-{{ $order['ticket'] }}">
+                                        <strong>#{{ $order['ticket'] }} {{ $order['symbol'] }}</strong>
+                                        <span>{{ $order['type'] }} · {{ $order['lots'] }} @ {{ $order['price'] }}</span>
+                                        <button type="button" wire:click="cancelPendingOrder({{ (int) $order['ticket'] }})">{{ __('trading.terminal.cancel') }}</button>
+                                    </li>
+                                @empty
+                                    <li class="is-empty">{{ __('trading.terminal.no_pending') }}</li>
+                                @endforelse
+                            </ul>
+                        </div>
+                    </aside>
+                    <aside class="term-desk__meter" aria-label="{{ __('trading.terminal.summary') }}">
+                        <div class="term-desk__meter-body">
+                            <h3>{{ __('trading.terminal.summary') }}</h3>
+                            <dl>
+                                <div>
+                                    <dt>{{ __('trading.terminal.balance') }}</dt>
+                                    <dd>{{ $desk['summary']['balance'] ?? '—' }}</dd>
+                                </div>
+                                <div>
+                                    <dt>{{ __('trading.terminal.equity') }}</dt>
+                                    <dd>{{ $desk['summary']['equity'] ?? '—' }}</dd>
+                                </div>
+                                <div>
+                                    <dt>{{ __('trading.terminal.today_pnl') }}</dt>
+                                    <dd @class(['term-desk__pnl', 'term-desk__pnl--'.($desk['summary']['today_tone'] ?? 'flat')])>{{ $desk['summary']['today'] ?? '—' }}</dd>
+                                </div>
+                                <div>
+                                    <dt>{{ __('trading.terminal.margin') }}</dt>
+                                    <dd data-account="margin">{{ $strip['margin'] ?? '—' }}</dd>
+                                </div>
+                                <div>
+                                    <dt>{{ __('trading.terminal.margin_free') }}</dt>
+                                    <dd data-account="free">{{ $strip['margin_free'] ?? '—' }}</dd>
+                                </div>
+                            </dl>
+                        </div>
+                    </aside>
+                    <section class="term-desk__chart" aria-label="{{ __('trading.terminal.candles') }}">
+                        <div class="term-desk__chart-body">
+                            <div class="term-desk__chart-head">
+                                <h3>{{ __('trading.terminal.candles') }}@if ($orderSymbol !== '') · {{ $orderSymbol }}@endif</h3>
+                                <div class="term-desk__chips">
+                                    @foreach (['1m', '5m', '15m', '30m', '1h', '4h', 'd', 'w'] as $frame)
+                                        <button type="button" class="term-desk__chip {{ $candleFrame === $frame ? 'is-on' : '' }}" wire:click="loadCandles('{{ $frame }}')" wire:key="frame-{{ $frame }}">{{ strtoupper($frame) }}</button>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @if ($candles === [])
+                                <p class="term-desk__empty">{{ $orderSymbol === '' ? __('trading.terminal.candles_empty') : __('trading.terminal.candles_missing') }}</p>
+                            @else
+                                @php($points = $this->candleBars())
+                                <svg class="term-desk__plot" viewBox="0 0 {{ count($points) }} 100" preserveAspectRatio="none" role="img" aria-label="{{ __('trading.terminal.candles') }}">
+                                    @foreach ($points as $point)
+                                        <g class="{{ $point['up'] ? 'is-up' : 'is-down' }}">
+                                            <title>{{ $point['time'] }} {{ $point['close'] }}</title>
+                                            <line vector-effect="non-scaling-stroke" x1="{{ $point['x'] }}" y1="{{ $point['high'] }}" x2="{{ $point['x'] }}" y2="{{ $point['low'] }}" />
+                                            <rect vector-effect="non-scaling-stroke" x="{{ $point['body'] }}" y="{{ $point['top'] }}" width="0.64" height="{{ $point['height'] }}" />
+                                        </g>
+                                    @endforeach
+                                </svg>
+                                <p class="term-desk__chart-last">{{ $orderSymbol }} {{ $points[count($points) - 1]['close'] }}</p>
+                            @endif
+                        </div>
+                    </section>
+                </div>
                 @if ($orderTone)
                     <div class="prop-risk prop-risk--{{ $orderTone }}">
                         @foreach ($orderMessages as $message)
@@ -397,7 +611,12 @@
                                 <td>{{ $row['stop'] }}</td>
                                 <td>{{ $row['take'] }}</td>
                                 <td class="term-desk__pnl term-desk__pnl--{{ $row['pnl_tone'] }}">{{ $row['pnl'] }}</td>
-                                <td>
+                                <td class="term-grid__trade">
+                                    <input data-stop value="{{ $row['stop'] }}" inputmode="decimal">
+                                    <input data-take value="{{ $row['take'] }}" inputmode="decimal">
+                                    <button type="button" x-on:click="$wire.changeProtection({{ $row['id'] }}, $el.parentElement.querySelector('[data-stop]').value, $el.parentElement.querySelector('[data-take]').value)">{{ __('trading.terminal.save_protection') }}</button>
+                                    <input data-part value="0.01" inputmode="decimal">
+                                    <button type="button" x-on:click="$wire.partialClose({{ $row['id'] }}, $el.parentElement.querySelector('[data-part]').value)">{{ __('trading.terminal.partial') }}</button>
                                     <button type="button" wire:click="closePosition({{ $row['id'] }})">{{ __('trading.terminal.close') }}</button>
                                 </td>
                             </tr>
@@ -411,6 +630,43 @@
             </div>
 
             <h3>{{ __('trading.terminal.history') }}</h3>
+            <form class="term-desk__connect" wire:submit="loadHistory">
+                <label>
+                    <span>{{ __('trading.terminal.history_days') }}</span>
+                    <input wire:model="historyDays" inputmode="numeric" min="1" max="365">
+                </label>
+                <div class="term-desk__connect-actions">
+                    <button type="submit">{{ __('trading.terminal.load_history') }}</button>
+                </div>
+            </form>
+            @if ($archive !== [])
+                <div class="term-desk__table term-desk__table--fit">
+                    <table class="term-grid">
+                        <thead>
+                            <tr>
+                                <th>{{ __('trading.terminal.ticket_no') }}</th>
+                                <th>{{ __('trading.terminal.symbol') }}</th>
+                                <th>{{ __('trading.terminal.lots') }}</th>
+                                <th>{{ __('trading.terminal.exit') }}</th>
+                                <th>{{ __('trading.terminal.pnl') }}</th>
+                                <th>{{ __('trading.terminal.time') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($archive as $deal)
+                                <tr wire:key="archive-{{ $deal['position_ticket'] }}-{{ $deal['time'] }}">
+                                    <td>#{{ $deal['position_ticket'] }}</td>
+                                    <td>{{ $deal['symbol'] }}</td>
+                                    <td>{{ $deal['lots'] }}</td>
+                                    <td>{{ $deal['price'] }}</td>
+                                    <td>{{ $deal['profit'] }}</td>
+                                    <td>{{ $deal['time'] }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
             <div class="term-desk__table">
                 <table>
                     <thead>
@@ -447,4 +703,5 @@
             </div>
         </div>
     </section>
+    </div>
 </x-filament-panels::page>

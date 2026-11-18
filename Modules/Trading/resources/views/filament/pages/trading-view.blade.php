@@ -39,8 +39,15 @@
             {{ __('trading.notices.unsupported') }}
         </p>
 
-        <section class="tv-indicators" aria-label="{{ __('trading.sections.pivot') }}">
-            <p class="tv-indicators__note">{{ __('trading.notes.pivot') }}</p>
+        <section class="tv-indicators" wire:poll.60s.visible="refreshIndicators" aria-label="{{ __('trading.sections.pivot') }}">
+            <div class="tv-pivot-head">
+                <p class="tv-indicators__note">{{ __('trading.notes.pivot') }}</p>
+                <p class="tv-live-rate" aria-live="polite">
+                    <span class="tv-live-rate__label">{{ __('trading.notices.live_price') }}</span>
+                    <span class="tv-live-rate__symbol">{{ $this->symbolLabels()[$symbol] ?? $symbol }}</span>
+                    <span class="tv-live-rate__value">{{ $livePrice ?? __('trading.notices.data_unavailable') }}</span>
+                </p>
+            </div>
             <div class="tv-workspace__gauges">
                 @foreach ($indicatorFrames as $frame)
                     <section class="tv-panel tv-panel--pivot" wire:key="pivot-{{ $symbol }}-{{ $frame['label'] }}">

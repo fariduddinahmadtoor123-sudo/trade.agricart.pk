@@ -9,7 +9,7 @@ class TradingViewIndicatorReader
 {
     private const ENDPOINT = 'https://scanner.tradingview.com/global/scan';
 
-    private const COLUMNS_PER_INTERVAL = 14;
+    private const COLUMNS_PER_INTERVAL = 12;
 
     /**
      * Scanner tickers for the page symbols. Cash and spot markets are used
@@ -84,45 +84,76 @@ class TradingViewIndicatorReader
      */
     public function forSymbol(string $symbol): array
     {
+        return $this->snapshot($symbol)['frames'];
+    }
+
+    /**
+     * Live last price plus the six timeframe readings, from one scanner request.
+     *
+     * @return array{
+     *     price: string|null,
+     *     frames: list<array{
+     *         label: string,
+     *         rsi: array{value: float, display: string, width: float, tone: string, label: string}|null,
+     *         macd: array{histogram: float, display: string, strength: float, tone: string, label: string}|null,
+     *         ma: array{tone: string, key: string, label: string, short: string, long: string}|null,
+     *         bollinger: array{tone: string, key: string, label: string, width: float, width_display: string, position: float}|null,
+     *         pivot: array{pp: string, r1: string, r2: string, s1: string, s2: string}|null
+     *     }>
+     * }
+     */
+    public function snapshot(string $symbol): array
+    {
         $ticker = self::SCANNER_SYMBOLS[$symbol] ?? null;
 
         if ($ticker === null) {
-            return $this->emptyFrames();
+            return [
+                'price' => null,
+                'frames' => $this->emptyFrames(),
+            ];
         }
 
         $values = $this->fetch($ticker, $this->columns());
         $frames = [];
+        $liveClose = null;
         $index = 0;
 
         foreach (self::INTERVALS as $label => $suffix) {
+            $close = $values[$index + 3] ?? null;
+
+            if ($suffix === '') {
+                $liveClose = $close;
+            }
+
             $frames[] = [
                 'label' => $label,
                 'rsi' => $this->rsiReading($values[$index] ?? null),
                 'macd' => $this->macdReading($values[$index + 1] ?? null, $values[$index + 2] ?? null),
                 'ma' => $this->maReading(
-                    $values[$index + 3] ?? null,
+                    $close,
                     $values[$index + 4] ?? null,
                     $values[$index + 5] ?? null,
                 ),
                 'bollinger' => $this->bollingerReading(
                     $label,
-                    $values[$index + 3] ?? null,
+                    $close,
                     $values[$index + 6] ?? null,
                     $values[$index + 7] ?? null,
                     $values[$index + 8] ?? null,
                 ),
-                'pivot' => $this->pivotReading(
+                'pivot' => $this->classicPivot(
                     $values[$index + 9] ?? null,
                     $values[$index + 10] ?? null,
                     $values[$index + 11] ?? null,
-                    $values[$index + 12] ?? null,
-                    $values[$index + 13] ?? null,
                 ),
             ];
             $index += self::COLUMNS_PER_INTERVAL;
         }
 
-        return $frames;
+        return [
+            'price' => $liveClose === null ? null : $this->formatPrice($liveClose),
+            'frames' => $frames,
+        ];
     }
 
     /**
@@ -179,11 +210,9 @@ class TradingViewIndicatorReader
             $columns[] = 'BB.upper'.$interval;
             $columns[] = 'BB.lower'.$interval;
             $columns[] = 'BB.basis'.$interval;
-            $columns[] = 'Pivot.M.Classic.Middle'.$interval;
-            $columns[] = 'Pivot.M.Classic.R1'.$interval;
-            $columns[] = 'Pivot.M.Classic.R2'.$interval;
-            $columns[] = 'Pivot.M.Classic.S1'.$interval;
-            $columns[] = 'Pivot.M.Classic.S2'.$interval;
+            $columns[] = 'high[1]'.$interval;
+            $columns[] = 'low[1]'.$interval;
+            $columns[] = 'close[1]'.$interval;
         }
 
         return $columns;
@@ -308,20 +337,26 @@ class TradingViewIndicatorReader
     }
 
     /**
+     * Classic floor pivots from the previous completed candle.
+     * These move when that candle closes, per timeframe.
+     *
      * @return array{pp: string, r1: string, r2: string, s1: string, s2: string}|null
      */
-    private function pivotReading(?float $pp, ?float $r1, ?float $r2, ?float $s1, ?float $s2): ?array
+    private function classicPivot(?float $high, ?float $low, ?float $close): ?array
     {
-        if ($pp === null || $r1 === null || $r2 === null || $s1 === null || $s2 === null) {
+        if ($high === null || $low === null || $close === null || $high < $low) {
             return null;
         }
 
+        $pivot = ($high + $low + $close) / 3;
+        $range = $high - $low;
+
         return [
-            'pp' => $this->formatPrice($pp),
-            'r1' => $this->formatPrice($r1),
-            'r2' => $this->formatPrice($r2),
-            's1' => $this->formatPrice($s1),
-            's2' => $this->formatPrice($s2),
+            'pp' => $this->formatPrice($pivot),
+            'r1' => $this->formatPrice((2 * $pivot) - $low),
+            'r2' => $this->formatPrice($pivot + $range),
+            's1' => $this->formatPrice((2 * $pivot) - $high),
+            's2' => $this->formatPrice($pivot - $range),
         ];
     }
 

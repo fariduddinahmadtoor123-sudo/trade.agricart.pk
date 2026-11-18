@@ -146,6 +146,8 @@ class TradingView extends Page
      */
     public array $indicatorFrames = [];
 
+    public ?string $livePrice = null;
+
     public function mount(): void
     {
         $default = (string) config('trading.default_tradingview_symbol', 'OANDA:XAUUSD');
@@ -163,9 +165,16 @@ class TradingView extends Page
         $this->loadIndicators();
     }
 
+    public function refreshIndicators(): void
+    {
+        $this->loadIndicators();
+    }
+
     private function loadIndicators(): void
     {
-        $this->indicatorFrames = app(TradingViewIndicatorReader::class)->forSymbol($this->symbol);
+        $snapshot = app(TradingViewIndicatorReader::class)->snapshot($this->symbol);
+        $this->indicatorFrames = $snapshot['frames'];
+        $this->livePrice = $snapshot['price'];
     }
 
     /**
